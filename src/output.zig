@@ -137,7 +137,7 @@ pub fn promote_new_window(self: *Self) void {
                 Window,
                 &self.windows.link,
                 &win.link,
-                .prev,
+                .next,
             );
             if (current_window.visiable(self)) {
                 break;
