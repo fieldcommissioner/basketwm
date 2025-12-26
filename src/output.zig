@@ -135,14 +135,14 @@ pub fn promote_new_window(self: *Self) void {
         .prev,
     );
 
-    self.set_current(
+    self.set_current_window(
         if (current_window == former_window) null
         else current_window
     );
 }
 
 
-pub fn set_current(self: *Self, window: ?*Window) void {
+pub inline fn set_current_window(self: *Self, window: ?*Window) void {
     log.debug("<{*}> set current window: {*}", .{ self, window });
 
     self.current_window = window;

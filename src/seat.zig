@@ -259,7 +259,7 @@ fn rwm_seat_listener(rwm_seat: *river.SeatV1, event: river.SeatV1.Event, seat: *
             );
 
             context.set_current_output(window.output.?);
-            window.output.?.set_current(window);
+            window.output.?.set_current_window(window);
         },
         .wl_seat => |data| {
             log.debug("<{*}> wl_seat: {}", .{ seat, data.name });
