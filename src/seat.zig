@@ -302,10 +302,14 @@ fn rwm_seat_listener(rwm_seat: *river.SeatV1, event: river.SeatV1.Event, seat: *
                 @alignCast(river.WindowV1.getUserData(rwm_window))
             );
 
+            std.debug.assert(seat.window_below_pointer == null);
+
             seat.window_below_pointer = window;
         },
         .pointer_leave => {
             log.debug("<{*}> pointer leave", .{ seat });
+
+            std.debug.assert(seat.window_below_pointer != null);
 
             seat.window_below_pointer = null;
         },
