@@ -88,6 +88,7 @@ pub fn destroy(self: *Self) void {
 
     self.link.remove();
     self.rwm_seat.destroy();
+    self.rwm_layer_shell_seat.destroy();
 
     for (&self.xkb_bindings.values) |*list| {
         for (list.items) |*xkb_binding| {
