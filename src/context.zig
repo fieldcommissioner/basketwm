@@ -175,14 +175,14 @@ pub fn promote_new_seat(self: *Self) void {
 }
 
 
-pub fn set_current_output(self: *Self, output: ?*Output) void {
+pub inline fn set_current_output(self: *Self, output: ?*Output) void {
     log.debug("set current output: {*}", .{ output });
 
     self.current_output = output;
 }
 
 
-pub fn set_current_seat(self: *Self, seat: ?*Seat) void {
+pub inline fn set_current_seat(self: *Self, seat: ?*Seat) void {
     log.debug("set current seat: {*}", .{ seat });
 
     self.current_seat = seat;
