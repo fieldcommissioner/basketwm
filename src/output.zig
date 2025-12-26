@@ -129,28 +129,28 @@ pub fn promote_new_window(self: *Self) void {
 
     const former_window = self.current_window.?;
 
-    var current_window: *Window = undefined;
+    var new_window: *Window = undefined;
     {
         var win = former_window;
         while (true) {
-            current_window = utils.cycle_list(
+            new_window = utils.cycle_list(
                 Window,
                 &self.windows.link,
                 &win.link,
                 .next,
             );
-            if (current_window.visiable(self)) {
+            if (new_window.visiable(self)) {
                 break;
             } else {
-                win = current_window;
+                win = new_window;
             }
         }
     }
 
     former_window.unfocus();
 
-    if (current_window != former_window) {
-        current_window.focus();
+    if (new_window != former_window) {
+        new_window.focus();
     }
 }
 
