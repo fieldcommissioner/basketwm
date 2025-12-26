@@ -125,19 +125,25 @@ pub fn destroy(self: *Self) void {
 
 
 pub fn toggle_bindings(self: *Self, mode: config.seat.Mode, flag: bool) void {
-    if (flag) {
-        for (self.xkb_bindings.get(mode).?.items) |xkb_binding| {
-            xkb_binding.enable();
+    log.debug("<{*}> toggle binding: (mode: {s}, flag: {})", .{ self, @tagName(mode), flag });
+
+    if (self.xkb_bindings.get(mode)) |list| {
+        for (list.items) |xkb_binding| {
+            if (flag) {
+                xkb_binding.enable();
+            } else {
+                xkb_binding.disable();
+            }
         }
-        for (self.pointer_bindings.get(mode).?.items) |pointer_binding| {
-            pointer_binding.enable();
-        }
-    } else {
-        for (self.xkb_bindings.get(mode).?.items) |xkb_binding| {
-            xkb_binding.disable();
-        }
-        for (self.pointer_bindings.get(mode).?.items) |pointer_binding| {
-            pointer_binding.disable();
+    }
+
+    if (self.pointer_bindings.get(mode)) |list| {
+        for (list.items) |pointer_binding| {
+            if (flag) {
+                pointer_binding.enable();
+            } else {
+                pointer_binding.disable();
+            }
         }
     }
 }
