@@ -185,14 +185,14 @@ pub fn prepare_resize(self: *Self, seat: ?*Seat) void {
 
 
 pub fn prepare_fullscreen(self: *Self, output: ?*Output) void {
-    const target_output = output orelse self.output orelse {
-        log.err("<{*}> unable to turn fullscreen: null target output", .{ self });
-        return;
-    };
+    if (output) |target_output| {
+        log.debug("<{*}> prepare to fullscreen on {*}", .{ self, target_output });
+    } else {
+        log.debug("<{*}> prepare to fullscreen on window", .{ self });
+    }
 
-    log.debug("<{*}> prepare to fullscreen on {*}", .{ self, target_output });
 
-    self.append_event(.{ .fullscreen = target_output });
+    self.append_event(.{ .fullscreen = output });
 }
 
 
@@ -367,7 +367,7 @@ fn handle_events(self: *Self) void {
                     self.rwm_window.fullscreen(output.rwm_output);
                     self.fullscreen = .output;
                 } else {
-                    log.debug("<{*}> window fullscreen", .{ self });
+                    log.debug("<{*}> fullscreen on window", .{ self });
 
                     self.fullscreen = .window;
                 }
