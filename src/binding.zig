@@ -7,6 +7,7 @@ const Direction = enum {};
 
 pub const Action = union(enum) {
     quit,
+    close,
     spawn: []const []const u8,
     spawn_shell: []const u8,
     move,

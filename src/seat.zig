@@ -197,6 +197,11 @@ fn handle_bindings(self: *Self) void {
             .quit => {
                 context.rwm.stop();
             },
+            .close => {
+                if (context.focused()) |window| {
+                    window.prepare_close();
+                }
+            },
             .spawn => |argv| {
                 context.spawn(argv);
             },

@@ -168,6 +168,13 @@ pub fn unfocus(self: *Self) void {
 }
 
 
+pub inline fn prepare_close(self: *Self) void {
+    log.debug("<{*}> prepare to close", .{ self });
+
+    self.rwm_window.close();
+}
+
+
 pub fn prepare_move(self: *Self, seat: ?*Seat) void {
     log.debug("<{*}> prepare to move, seat: {*}", .{ self, seat });
 
