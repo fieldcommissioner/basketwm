@@ -492,8 +492,8 @@ fn rwm_window_listener(rwm_window: *river.WindowV1, event: river.WindowV1.Event,
         .dimensions => |data| {
             log.debug("<{*}> dimensions: ({}, {})", .{ window, data.width, data.height });
 
-            window.width = data.width;
-            window.height = data.height;
+            // window.width = data.width;
+            // window.height = data.height;
         },
         .dimensions_hint => |data| {
             log.debug(
