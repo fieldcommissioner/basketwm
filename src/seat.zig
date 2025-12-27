@@ -250,7 +250,7 @@ fn window_interaction(self: *Self, window: *Window) void {
 
     if (window.output.? == context.current_output.?) {
         if (window.output.?.current_window) |win| {
-            std.debug.assert(win.focused);
+            std.debug.assert(win.if_focused());
 
             win.unfocus();
         }

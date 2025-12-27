@@ -46,7 +46,7 @@ maximize: bool = false,
 floating: bool = false,
 
 tag: u32,
-focused: bool = false,
+focus_tag: u32 = 0,
 app_id: ?[]const u8 = null,
 title: ?[]const u8 = null,
 parent: ?*Self = null,
@@ -55,8 +55,8 @@ decoration: ?enum(u1) {
     ssd,
 } = null,
 
-x: i32 = undefined,
-y: i32 = undefined,
+x: i32 = 0,
+y: i32 = 0,
 width: i32 = undefined,
 height: i32 = undefined,
 operator: union(enum) {
@@ -155,16 +155,16 @@ pub fn resize(self: *Self, width: ?i32, height: ?i32) void {
 pub fn focus(self: *Self) void {
     log.debug("<{*}> focused", .{ self });
 
-    self.focused = true;
+    self.focus_tag |= self.output.?.main_tag;
 }
 
 
 pub fn unfocus(self: *Self) void {
     log.debug("<{*}> unfocus", .{ self });
 
-    std.debug.assert(self.focused);
+    std.debug.assert(self.if_focused());
 
-    self.focused = false;
+    self.focus_tag &= ~self.output.?.main_tag;
 }
 
 
@@ -254,6 +254,14 @@ pub fn visiable(self: *Self, output: *Output) bool {
 }
 
 
+pub fn if_focused(self: *Self) bool {
+    if (self.output) |output| {
+        return self.focus_tag & output.main_tag != 0;
+    }
+    return false;
+}
+
+
 pub fn manage(self: *Self) void {
     log.debug("<{*}> managing", .{ self });
 
@@ -305,6 +313,12 @@ fn set_title(self: *Self, title: ?[]const u8) void {
 }
 
 
+fn center(self: *Self) void {
+    self.x = @divFloor(self.output.?.width-self.width, 2);
+    self.y = @divFloor(self.output.?.height-self.height, 2);
+}
+
+
 fn append_event(self: *Self, event: Event) void {
     log.debug("<{*}> append event: {s}", .{ self, @tagName(event) });
 
@@ -345,10 +359,9 @@ fn handle_events(self: *Self) void {
                     .ssd => self.rwm_window.useSsd(),
                 }
 
-                self.x = @divFloor(self.output.?.width, 4);
-                self.y = @divFloor(self.output.?.height, 4);
                 self.width = @divFloor(self.output.?.width, 2);
                 self.height = @divFloor(self.output.?.height, 2);
+                self.center();
             },
             .decoration_hint => |decoration_hint| {
                 log.debug("<{*}> managing decoration hint", .{ self });

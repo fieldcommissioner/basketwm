@@ -24,6 +24,7 @@ rwm_output: *river.OutputV1,
 rwm_layer_shell_output: ?*river.LayerShellOutputV1,
 
 tag: u32 = 1,
+main_tag: u32 = 1,
 windows: wl.list.Head(Window, .link) = undefined,
 current_window: ?*Window = null,
 fullscreen_window: ?*Window = null,
@@ -87,10 +88,10 @@ pub fn add_window(self: *Self, window: *Window) void {
 
     std.debug.assert(window.output == null);
 
+    window.output = self;
     window.focus();
     if (self.current_window) |win| win.unfocus();
     self.windows.prepend(window);
-    window.output = self;
 }
 
 
@@ -179,7 +180,7 @@ pub fn render(self: *Self) void {
         var it = self.windows.safeIterator(.forward);
         while (it.next()) |window| {
             if (window.visiable(self)) {
-                if (window.focused) {
+                if (window.if_focused()) {
                     window.rwm_window_node.placeTop();
                 }
                 window.set_border(
@@ -202,7 +203,7 @@ pub fn refresh_current_window(self: *Self) void {
     {
         var it = self.windows.safeIterator(.forward);
         while (it.next()) |window| {
-            if (window.visiable(self) and window.focused) {
+            if (window.visiable(self) and window.if_focused()) {
                 std.debug.assert(self.current_window == null);
                 self.current_window = window;
             }
