@@ -18,4 +18,8 @@ pub const Action = union(enum) {
     toggle_fullscreen: struct {
         window: bool = false,
     },
+    set_output_tag: u32,
+    set_window_tag: u32,
+    toggle_output_tag: u32,
+    toggle_window_tag: u32,
 };

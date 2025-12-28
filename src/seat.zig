@@ -237,6 +237,26 @@ fn handle_bindings(self: *Self) void {
                     }
                 }
             },
+            .set_output_tag => |tag| {
+                if (context.current_output) |output| {
+                    output.set_tag(tag);
+                }
+            },
+            .set_window_tag => |tag| {
+                if (context.focused_window()) |window| {
+                    window.set_tag(tag);
+                }
+            },
+            .toggle_output_tag => |tag| {
+                if (context.current_output) |output| {
+                    output.toggle_tag(tag);
+                }
+            },
+            .toggle_window_tag => |tag| {
+                if (context.focused_window()) |window| {
+                    window.toggle_tag(tag);
+                }
+            },
             else => {}
         }
     }
