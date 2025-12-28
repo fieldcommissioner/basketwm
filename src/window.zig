@@ -605,7 +605,6 @@ fn rwm_window_listener(rwm_window: *river.WindowV1, event: river.WindowV1.Event,
             window.parent = parent_window;
         },
         .pointer_move_requested => |data| {
-            // TODO: Find own seat.
             log.debug("<{*}> pointer move requested: {*}", .{ window, data.seat });
 
             if (data.seat) |rwm_seat| {
@@ -617,7 +616,6 @@ fn rwm_window_listener(rwm_window: *river.WindowV1, event: river.WindowV1.Event,
 
         },
         .pointer_resize_requested => |data| {
-            // TODO: Find own seat.
             log.debug("<{*}> pointer resize requested: {*}", .{ window, data.seat });
 
             if (data.seat) |rwm_seat| {
