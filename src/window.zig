@@ -293,6 +293,13 @@ pub fn set_border(self: *Self, width: i32, rgb: u32) void {
 }
 
 
+pub fn toggle_floating(self: *Self) void {
+    log.debug("<{*}> toggle floating: {}", .{ self, !self.floating });
+
+    self.floating = !self.floating;
+}
+
+
 pub fn is_visiable(self: *Self) bool {
     if (self.output) |output| {
         return (self.tag & output.tag) != 0;

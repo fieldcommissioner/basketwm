@@ -281,6 +281,11 @@ fn handle_actions(self: *Self) void {
                     window.toggle_tag(data.mask);
                 }
             },
+            .toggle_floating => {
+                if (context.focused_window()) |window| {
+                    window.toggle_floating();
+                }
+            }
         }
     }
 }
