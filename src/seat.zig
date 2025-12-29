@@ -175,7 +175,7 @@ pub fn manage(self: *Self) void {
         self.toggle_bindings(context.mode, true);
     }
 
-    self.handle_bindings();
+    self.handle_actions();
 
     self.rwm_seat.clearFocus();
 }
@@ -193,7 +193,7 @@ pub fn try_focus(self: *Self) void {
 }
 
 
-fn handle_bindings(self: *Self) void {
+fn handle_actions(self: *Self) void {
     defer self.unhandled_actions.clearRetainingCapacity();
 
     const context = Context.get();
