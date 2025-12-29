@@ -22,7 +22,8 @@ pub const Action = union(enum) {
         cmd: []const u8,
     },
     focus_iter: struct {
-        direction: wl.list.Direction
+        direction: wl.list.Direction,
+        skip_floating: bool = false,
     },
     move: struct {
         step: MoveResizeStep,

@@ -150,7 +150,7 @@ pub fn focused_window(self: *Self) ?*Window {
 }
 
 
-pub fn focus_iter(self: *Self, direction: wl.list.Direction) void {
+pub fn focus_iter(self: *Self, direction: wl.list.Direction, skip_floating: bool) void {
     log.debug("focus iter: {s}", .{ @tagName(direction) });
 
     if (self.focused_window()) |window| {
@@ -162,6 +162,7 @@ pub fn focus_iter(self: *Self, direction: wl.list.Direction) void {
             };
             if (new_win == win) break;
             if (new_win.is_visiable_in(window.output.?)) {
+                if (skip_floating and new_win.floating) continue;
                 self.focus(new_win);
                 break;
             }
