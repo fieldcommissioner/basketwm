@@ -293,6 +293,15 @@ pub fn set_border(self: *Self, width: i32, rgb: u32) void {
 }
 
 
+pub fn ensure_floating(self: *Self) void {
+    if (!self.floating) {
+        log.debug("<{*}> turning floating", .{ self });
+
+        self.floating = true;
+    }
+}
+
+
 pub fn toggle_floating(self: *Self) void {
     log.debug("<{*}> toggle floating: {}", .{ self, !self.floating });
 
@@ -483,6 +492,8 @@ fn handle_events(self: *Self) void {
             .move => |data| {
                 log.debug("<{*}> managing move, seat: {*}", .{ self, data });
 
+                self.ensure_floating();
+
                 if (data) |seat| {
                     seat.op_start();
                     self.operator = .{
@@ -504,6 +515,8 @@ fn handle_events(self: *Self) void {
             },
             .resize => |data| {
                 log.debug("<{*}> managing resize, seat: {*}", .{ self, data });
+
+                self.ensure_floating();
 
                 if (data) |seat| {
                     seat.op_start();

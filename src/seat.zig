@@ -215,6 +215,7 @@ fn handle_actions(self: *Self) void {
             },
             .move => |data| {
                 if (context.focused_window()) |window| {
+                    window.ensure_floating();
                     switch (data.step) {
                         .horizontal => |offset| window.move(window.x+offset, null),
                         .vertical => |offset| window.move(null, window.y+offset),
@@ -223,6 +224,7 @@ fn handle_actions(self: *Self) void {
             },
             .resize => |data| {
                 if (context.focused_window()) |window| {
+                    window.ensure_floating();
                     switch (data.step) {
                         .horizontal => |offset| {
                             window.move(window.x-@divFloor(offset, 2), null);
