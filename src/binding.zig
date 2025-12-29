@@ -14,19 +14,31 @@ const MoveResizeStep = union(enum) {
 pub const Action = union(enum) {
     quit,
     close,
-    spawn: []const []const u8,
-    spawn_shell: []const u8,
-    move: MoveResizeStep,
-    resize: MoveResizeStep,
+    spawn: struct {
+        argv: []const []const u8,
+    },
+    spawn_shell: struct {
+        cmd: []const u8,
+    },
+    move: struct {
+        step: MoveResizeStep,
+    },
+    resize: struct {
+        step: MoveResizeStep,
+    },
     pointer_move,
     pointer_resize,
-    snap: river.WindowV1.Edges,
-    switch_mode: config.Mode,
+    snap: struct {
+        edges: river.WindowV1.Edges,
+    },
+    switch_mode: struct {
+        mode: config.Mode,
+    },
     toggle_fullscreen: struct {
         in_window: bool = false,
     },
-    set_output_tag: u32,
-    set_window_tag: u32,
-    toggle_output_tag: u32,
-    toggle_window_tag: u32,
+    set_output_tag: struct { tag: u32 },
+    set_window_tag: struct { tag: u32 },
+    toggle_output_tag: struct { mask: u32 },
+    toggle_window_tag: struct { mask: u32 },
 };

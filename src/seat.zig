@@ -207,23 +207,23 @@ fn handle_bindings(self: *Self) void {
                     window.prepare_close();
                 }
             },
-            .spawn => |argv| {
-                context.spawn(argv);
+            .spawn => |data| {
+                context.spawn(data.argv);
             },
-            .spawn_shell => |cmd| {
-                context.spawn_shell(cmd);
+            .spawn_shell => |data| {
+                context.spawn_shell(data.cmd);
             },
-            .move => |step| {
+            .move => |data| {
                 if (context.focused_window()) |window| {
-                    switch (step) {
+                    switch (data.step) {
                         .horizontal => |offset| window.move(window.x+offset, null),
                         .vertical => |offset| window.move(null, window.y+offset),
                     }
                 }
             },
-            .resize => |step| {
+            .resize => |data| {
                 if (context.focused_window()) |window| {
-                    switch (step) {
+                    switch (data.step) {
                         .horizontal => |offset| {
                             window.move(window.x-@divFloor(offset, 2), null);
                             window.resize(window.width+offset, null);
@@ -247,35 +247,35 @@ fn handle_bindings(self: *Self) void {
                     window.prepare_resize(self);
                 }
             },
-            .snap => |edges| {
+            .snap => |data| {
                 if (context.focused_window()) |window| {
-                    window.snap_to(edges);
+                    window.snap_to(data.edges);
                 }
             },
-            .switch_mode => |mode| {
-                context.switch_mode(mode);
+            .switch_mode => |data| {
+                context.switch_mode(data.mode);
             },
             .toggle_fullscreen => |data| {
                 context.toggle_fullscreen(data.in_window);
             },
-            .set_output_tag => |tag| {
+            .set_output_tag => |data| {
                 if (context.current_output) |output| {
-                    output.set_tag(tag);
+                    output.set_tag(data.tag);
                 }
             },
-            .set_window_tag => |tag| {
+            .set_window_tag => |data| {
                 if (context.focused_window()) |window| {
-                    window.set_tag(tag);
+                    window.set_tag(data.tag);
                 }
             },
-            .toggle_output_tag => |tag| {
+            .toggle_output_tag => |data| {
                 if (context.current_output) |output| {
-                    output.toggle_tag(tag);
+                    output.toggle_tag(data.mask);
                 }
             },
-            .toggle_window_tag => |tag| {
+            .toggle_window_tag => |data| {
                 if (context.focused_window()) |window| {
-                    window.toggle_tag(tag);
+                    window.toggle_tag(data.mask);
                 }
             },
         }
