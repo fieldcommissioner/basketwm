@@ -260,6 +260,9 @@ fn handle_actions(self: *Self) void {
             .focus_iter => |data| {
                 context.focus_iter(data.direction, data.skip_floating);
             },
+            .focus_output_iter => |data| {
+                context.focus_output_iter(data.direction);
+            },
             .toggle_fullscreen => |data| {
                 context.toggle_fullscreen(data.in_window);
             },

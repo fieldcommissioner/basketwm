@@ -140,6 +140,16 @@ pub const xkb_bindings = blk: {
             .action = .{ .focus_iter = .{ .direction = .reverse } },
         },
         .{
+            .keysym = Keysym.period,
+            .modifiers = Super,
+            .action = .{ .focus_output_iter = .{ .direction = .forward } },
+        },
+        .{
+            .keysym = Keysym.comma,
+            .modifiers = Super,
+            .action = .{ .focus_output_iter = .{ .direction = .reverse } },
+        },
+        .{
             .keysym = Keysym.f,
             .modifiers = Super,
             .action = .{ .toggle_fullscreen = .{ .in_window = true } },

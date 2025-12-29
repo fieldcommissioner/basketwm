@@ -184,6 +184,21 @@ pub fn focus_top_in(self: *Self, output: *Output, skip_floating: bool) ?*Window 
 }
 
 
+pub fn focus_output_iter(self: *Self, direction: wl.list.Direction) void {
+    log.debug("focus output iter: {s}", .{ @tagName(direction) });
+
+    if (self.current_output) |output| {
+        const new_output = switch (direction) {
+            .forward => utils.cycle_list(Output, &self.outputs.link, &output.link, .next),
+            .reverse => utils.cycle_list(Output, &self.outputs.link, &output.link, .prev),
+        };
+        if (new_output != output) {
+            self.set_current_output(new_output);
+        }
+    }
+}
+
+
 pub inline fn focus_exclusive(self: *Self) bool {
     return if (self.current_seat) |seat| seat.focus_exclusive else false;
 }
