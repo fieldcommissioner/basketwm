@@ -70,11 +70,13 @@ pub var layout: struct {
 
 
 fn modify_mfact(context: *const Context, arg: *const binding.Arg) void {
+    std.debug.assert(arg.* == .f);
+
     if (context.current_output) |output| {
         switch (output.current_layout()) {
-            .tile => layout.tile.mfact += arg.f,
-            .scroller => layout.scroller.mfact += arg.f,
-            else => {}
+            .tile => layout.tile.mfact = @min(1, @max(0, layout.tile.mfact+arg.f)),
+            .scroller => layout.scroller.mfact = @min(1, @max(0, layout.scroller.mfact+arg.f)),
+            else => {},
         }
     }
 }
