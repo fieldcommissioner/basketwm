@@ -219,6 +219,14 @@ pub fn switch_mode(self: *Self, mode: config.Mode) void {
 }
 
 
+pub fn shift_to_head(self: *Self, window: *Window) void {
+    log.debug("shift window {*} to head", .{ window });
+
+    window.link.remove();
+    self.windows.prepend(window);
+}
+
+
 pub fn toggle_fullscreen(self: *Self, in_window: bool) void {
     if (self.current_output) |output| {
         if (output.fullscreen_window) |window| {

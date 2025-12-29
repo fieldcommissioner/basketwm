@@ -285,6 +285,14 @@ fn handle_actions(self: *Self) void {
                 if (context.focused_window()) |window| {
                     window.toggle_floating();
                 }
+            },
+            .zoom => {
+                if (context.focused_window()) |window| {
+                    std.debug.assert(window.output != null);
+
+                    context.shift_to_head(window);
+                    context.focus(window);
+                }
             }
         }
     }
