@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const xkb = @import("xkbcommon");
 const Keysym = xkb.Keysym;
 const wayland = @import("wayland");
