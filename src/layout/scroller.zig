@@ -34,7 +34,7 @@ pub fn arrange(self: *const Self, output: *Output) void {
         while (link.prev.? != &context.windows.link) {
             defer link = link.prev.?;
             const window: *Window = @fieldParentPtr("link", link.prev.?);
-            if (!window.is_visiable_in(output) or window.floating) continue;
+            if (!window.is_visible_in(output) or window.floating) continue;
 
             x -= self.gap + 2*config.border_width;
             if (x <= 0) {
@@ -55,7 +55,7 @@ pub fn arrange(self: *const Self, output: *Output) void {
         while (link.next.? != &context.windows.link) {
             defer link = link.next.?;
             const window: *Window = @fieldParentPtr("link", link.next.?);
-            if (!window.is_visiable_in(output) or window.floating) continue;
+            if (!window.is_visible_in(output) or window.floating) continue;
 
             x += self.gap + 2*config.border_width;
             if (x >= output.width) {

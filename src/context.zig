@@ -141,7 +141,7 @@ pub fn focused_window(self: *Self) ?*Window {
     if (self.current_output) |output| {
         var it = self.focus_stack.safeIterator(.forward);
         while (it.next()) |window| {
-            if (window.is_visiable_in(output)) {
+            if (window.is_visible_in(output)) {
                 return window;
             }
         }
@@ -162,7 +162,7 @@ pub fn focus_iter(self: *Self, direction: wl.list.Direction, skip_floating: bool
             };
             defer win = new_window;
             if (new_window == window) break;
-            if (new_window.is_visiable_in(window.output.?)) {
+            if (new_window.is_visible_in(window.output.?)) {
                 if (skip_floating and new_window.floating) continue;
                 self.focus(new_window);
                 break;
@@ -175,7 +175,7 @@ pub fn focus_iter(self: *Self, direction: wl.list.Direction, skip_floating: bool
 pub fn focus_top_in(self: *Self, output: *Output, skip_floating: bool) ?*Window {
     var it = self.focus_stack.safeIterator(.forward);
     while (it.next()) |window| {
-        if (window.is_visiable_in(output)) {
+        if (window.is_visible_in(output)) {
             if (skip_floating and window.floating) continue;
             return window;
         }
@@ -218,7 +218,7 @@ pub fn swap(self: *Self, direction: wl.list.Direction) void {
             };
             defer win = new_window;
             if (new_window == window) break;
-            if (new_window.is_visiable_in(window.output.?) and !new_window.floating) {
+            if (new_window.is_visible_in(window.output.?) and !new_window.floating) {
                 window.link.swapWith(&new_window.link);
                 self.focus(window);
                 break;
@@ -434,7 +434,7 @@ fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event,
             {
                 var it = context.windows.safeIterator(.forward);
                 while (it.next()) |window| {
-                    if (!window.is_visiable()) {
+                    if (!window.is_visible()) {
                         window.hide();
                     }
 

@@ -330,7 +330,7 @@ pub fn toggle_floating(self: *Self) void {
 }
 
 
-pub fn is_visiable(self: *Self) bool {
+pub fn is_visible(self: *Self) bool {
     if (self.output) |output| {
         return (self.tag & output.tag) != 0;
     }
@@ -338,7 +338,7 @@ pub fn is_visiable(self: *Self) bool {
 }
 
 
-pub fn is_visiable_in(self: *Self, output: *Output) bool {
+pub fn is_visible_in(self: *Self, output: *Output) bool {
     if (self.output == null) return false;
 
     if (self.output.? != output) return false;

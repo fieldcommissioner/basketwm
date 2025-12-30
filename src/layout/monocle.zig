@@ -22,7 +22,7 @@ pub fn arrange(self: *const Self, output: *Output) void {
     {
         var it = context.windows.safeIterator(.forward);
         while (it.next()) |window| {
-            if (!window.is_visiable_in(output) or window.floating) continue;
+            if (!window.is_visible_in(output) or window.floating) continue;
             if (window != focus_top) window.hide();
             window.move(self.gap+config.border_width, self.gap+config.border_width);
             window.resize(available_width, available_height);

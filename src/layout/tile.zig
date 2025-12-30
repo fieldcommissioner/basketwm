@@ -26,7 +26,7 @@ pub fn arrange(self: *const Self, output: *Output) void {
         var it = context.windows.safeIterator(.forward);
         while (it.next()) |window| {
             if (
-                !window.is_visiable_in(output)
+                !window.is_visible_in(output)
                 or window.floating
             ) continue;
             windows.append(utils.allocator, window) catch |err| {
