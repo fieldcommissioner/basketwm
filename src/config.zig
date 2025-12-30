@@ -45,6 +45,8 @@ const BorderColor = struct {
 
 pub const xcusor_theme: ?XcusorTheme = null;
 
+pub const auto_swallow = true;
+
 pub const Mode = enum {
     default,
     passthrough,
@@ -211,6 +213,11 @@ pub const xkb_bindings = blk: {
             .action = .toggle_floating,
         },
         .{
+            .keysym = Keysym.a,
+            .modifiers = Super,
+            .action = .toggle_swallow,
+        },
+        .{
             .keysym = Keysym.f,
             .modifiers = Super|Ctrl|Alt,
             .action = .{ .switch_layout = .{ .layout = .float } },
@@ -360,6 +367,8 @@ pub const rules = [_]Rule {
     //     .tag = 1,
     //     .floating = true,
     //     .decoration = .csd or .ssd
+    //     .is_terminal = true,
+    //     .disable_swallow = true,
     // },
     .{ .app_id = .{ .str = "chromium" }, .tag = 1 << 1 },
     .{ .app_id = .{ .str = "QQ" }, .tag = 1 << 2, .floating = true },
@@ -371,4 +380,5 @@ pub const rules = [_]Rule {
     .{ .app_id = .{ .str = "stalonetray" }, .floating = true },
     .{ .app_id = .{ .str = "lazarus" }, .floating = true },
     .{ .app_id = .{ .str = "ONLYOFFICE" }, .floating = true },
+    .{ .app_id = .{ .str = "foot" }, .is_terminal = true },
 };

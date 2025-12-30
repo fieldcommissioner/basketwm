@@ -37,6 +37,8 @@ current_output: ?*Output = null,
 windows: wl.list.Head(Window, .link) = undefined,
 focus_stack: wl.list.Head(Window, .flink) = undefined,
 
+terminal_windows: std.AutoHashMap(i32, *Window) = undefined,
+
 mode: config.Mode = .default,
 running: bool = true,
 locked: bool = false,
@@ -63,6 +65,7 @@ pub fn init(
         .rwm = rwm,
         .rwm_xkb_bindings = rwm_xkb_bindings,
         .rwm_layer_shell = rwm_layer_shell,
+        .terminal_windows = .init(utils.allocator),
         .env = process.getEnvMap(utils.allocator) catch |err| blk: {
             log.warn("get EnvMap failed: {}", .{ err });
             break :blk .init(utils.allocator);
@@ -117,6 +120,8 @@ pub fn deinit() void {
         ctx.?.windows.init();
         ctx.?.focus_stack.init();
     }
+
+    ctx.?.terminal_windows.deinit();
 
     ctx.?.env.deinit();
 }
@@ -292,6 +297,30 @@ pub fn toggle_fullscreen(self: *Self, in_window: bool) void {
             }
         }
     }
+}
+
+
+pub fn register_terminal(self: *Self, window: *Window) void {
+    log.debug("register terminal window {*}(pid: {})", .{ window, window.pid });
+
+    self.terminal_windows.put(window.pid, window) catch |err| {
+        log.err("put (key: {}, value: {*}) failed: {}", .{ window.pid, window, err });
+        return;
+    };
+}
+
+
+pub fn unregister_terminal(self: *Self, window: *Window) void {
+    log.debug("unregister terminal window {*}(pid: {})", .{ window, window.pid });
+
+    if (!self.terminal_windows.remove(window.pid)) {
+        log.debug("remove pid {} failed, not found", .{ window.pid });
+    }
+}
+
+
+pub inline fn find_terminal(self: *Self, pid: i32) ?*Window {
+    return self.terminal_windows.get(pid);
 }
 
 

@@ -1,4 +1,7 @@
 const std = @import("std");
+const fs = std.fs;
+const fmt = std.fmt;
+const mem = std.mem;
 const process = std.process;
 
 const wayland = @import("wayland");
@@ -36,4 +39,30 @@ pub fn rgba(color: u32) struct { r: u32, g: u32, b: u32, a: u32 } {
         .b = @as(u32, (color >> 0) & 0xFF) * (0xFFFF_FFFF / 0xFF),
         .a = 0xFFFF_FFFF,
     };
+}
+
+
+// https://codeberg.org/dwl/dwl-patches/src/branch/main/patches/swallow/swallow.patch
+pub fn parent_pid(pid: i32) i32 {
+    var path_buf: [32]u8 = undefined;
+    const path = fmt.bufPrint(
+        &path_buf,
+        "/proc/{}/stat",
+        .{ @as(u32, @intCast(pid)) },
+    ) catch return 0;
+
+    const file = fs.openFileAbsolute(path, .{ .mode = .read_only }) catch return 0;
+    defer file.close();
+
+    var buf: [256]u8 = undefined;
+    const nbytes = file.readAll(&buf) catch return 0;
+    const data = buf[0..nbytes];
+
+    var it = mem.splitAny(u8, data, " ");
+    _ = it.next(); // pid
+    _ = it.next(); // process name
+    _ = it.next(); // process state
+    const ppid_str = it.next() orelse return 0;
+
+    return fmt.parseInt(i32, ppid_str, 10) catch return 0;
 }

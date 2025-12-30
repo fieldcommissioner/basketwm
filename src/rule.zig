@@ -42,6 +42,8 @@ alter_match_fn: ?*const fn(*const Self, *const Window) bool = null,
 tag: ?u32 = null,
 floating: ?bool = null,
 decoration: ?Window.Decoration = null,
+is_terminal: ?bool = null,
+disable_swallow: ?bool = null,
 
 
 pub fn match(self: *const Self, window: *Window) bool {
@@ -73,4 +75,6 @@ pub fn apply(self: *const Self, window: *Window) void {
     if (self.tag) |tag| window.set_tag(tag);
     if (self.floating) |floating| window.floating = floating;
     if (self.decoration) |decoration| window.decoration = decoration;
+    if (self.is_terminal) |is_terminal| window.is_terminal = is_terminal;
+    if (self.disable_swallow) |disable_swallow| window.disable_swallow = disable_swallow;
 }

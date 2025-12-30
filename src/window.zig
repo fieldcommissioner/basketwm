@@ -51,11 +51,17 @@ hided: bool = false,
 cliped: bool = false,
 
 tag: u32 = 1,
+pid: i32 = 0,
 app_id: ?[]const u8 = null,
 title: ?[]const u8 = null,
 parent: ?*Self = null,
 decoration: ?Decoration = null,
 decoration_hint: river.WindowV1.DecorationHint = .no_preference,
+
+is_terminal: bool = false,
+swallowing: ?*Self = null,
+swallowed_by: ?*Self = null,
+disable_swallow: bool = false,
 
 x: i32 = 0,
 y: i32 = 0,
@@ -103,6 +109,12 @@ pub fn create(rwm_window: *river.WindowV1) !*Self {
 
 pub fn destroy(self: *Self) void {
     defer log.debug("<{*}> destroied", .{ self });
+
+    if (self.is_terminal) {
+        const context = Context.get();
+        context.unregister_terminal(self);
+    }
+    self.unswallow();
 
     self.link.remove();
     self.flink.remove();
@@ -333,7 +345,7 @@ pub fn toggle_floating(self: *Self) void {
 
 pub fn is_visible(self: *Self) bool {
     if (self.output) |output| {
-        return (self.tag & output.tag) != 0;
+        return (self.tag & output.tag) != 0 and self.swallowed_by == null;
     }
     return false;
 }
@@ -344,7 +356,18 @@ pub fn is_visible_in(self: *Self, output: *Output) bool {
 
     if (self.output.? != output) return false;
 
-    return (self.tag & output.tag) != 0;
+    return (self.tag & output.tag) != 0 and self.swallowed_by == null;
+}
+
+
+pub fn toggle_swallow(self: *Self) void {
+    log.debug("<{*}> toggle swallow", .{ self });
+
+    if (self.swallowing != null) {
+        self.unswallow();
+    } else {
+        self.try_swallow();
+    }
 }
 
 
@@ -394,6 +417,16 @@ pub fn handle_events(self: *Self) void {
                     self.width = @divFloor(self.output.?.width, 2);
                     self.height = @divFloor(self.output.?.height, 2);
                     self.center();
+                }
+
+                const context = Context.get();
+
+                if (self.is_terminal) {
+                    context.register_terminal(self);
+                }
+
+                if (config.auto_swallow) {
+                    self.try_swallow();
                 }
             },
             .fullscreen => |data| {
@@ -598,6 +631,79 @@ fn append_event(self: *Self, event: Event) void {
 }
 
 
+fn try_swallow(self: *Self) void {
+    log.debug("<{*}> try swallow", .{ self });
+
+    const context = Context.get();
+    if (!self.disable_swallow and self.pid != 0) {
+        var pid = self.pid;
+        var ppid: i32 = undefined;
+        while (true) {
+            ppid = utils.parent_pid(pid);
+            if (ppid == 0 or ppid == 1) break;
+
+            if (context.find_terminal(ppid)) |term| {
+                self.swallow(term);
+                break;
+            }
+
+            pid = ppid;
+        }
+    }
+
+}
+
+
+fn swallow(self: *Self, window: *Self) void {
+    if (self == window) return;
+
+    if (self.swallowing != null or window.swallowed_by != null) return;
+
+    log.debug("<{*}> swallowing {*}", .{ self, window });
+
+    self.swallowing = window;
+
+    self.floating = window.floating;
+    self.tag = window.tag;
+    self.x = window.x;
+    self.y = window.y;
+    self.width = window.width;
+    self.height = window.height;
+
+    self.link.remove();
+    window.link.insert(&self.link);
+    self.flink.remove();
+    window.flink.insert(&self.flink);
+
+    window.output = self.output;
+    window.swallowed_by = self;
+    switch (window.fullscreen) {
+        .none, .window => {},
+        .output => {
+            window.prepare_unfullscreen();
+        }
+    }
+}
+
+
+fn unswallow(self: *Self) void {
+    if (self.swallowing) |window| {
+        defer self.swallowing = null;
+
+        log.debug("<{*}> unswallowing {*}", .{ self, window });
+
+        window.swallowed_by = null;
+        window.output = self.output;
+        window.tag = self.tag;
+
+        window.link.remove();
+        self.link.insert(&window.link);
+        window.flink.remove();
+        self.flink.insert(&window.flink);
+    }
+}
+
+
 fn rwm_window_listener(rwm_window: *river.WindowV1, event: river.WindowV1.Event, window: *Self) void {
     std.debug.assert(rwm_window == window.rwm_window);
 
@@ -707,6 +813,8 @@ fn rwm_window_listener(rwm_window: *river.WindowV1, event: river.WindowV1.Event,
         },
         .unreliable_pid => |data| {
             log.debug("<{*}> unreliable pid: {}", .{ window, data.unreliable_pid });
+
+            window.pid = data.unreliable_pid;
         }
     }
 }
