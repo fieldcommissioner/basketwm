@@ -439,8 +439,6 @@ pub fn handle_events(self: *Self) void {
             .maximize => |flag| {
                 log.debug("<{*}> managing maximize: {}", .{ self, flag });
 
-                std.debug.assert(self.maximize != flag);
-
                 if (flag) {
                     self.rwm_window.informMaximized();
                 } else {
