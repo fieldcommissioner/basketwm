@@ -86,6 +86,10 @@ pub fn create(rwm_seat: *river.SeatV1) !*Self {
         );
     }
 
+    if (config.xcusor_theme) |xcusor_theme| {
+        rwm_seat.setXcursorTheme(xcusor_theme.name, xcusor_theme.size);
+    }
+
     rwm_seat.setListener(*Self, rwm_seat_listener, seat);
     rwm_layer_shell_seat.setListener(*Self, rwm_layer_shell_seat_listener, seat);
 

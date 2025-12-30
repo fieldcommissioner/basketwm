@@ -18,6 +18,10 @@ const Button = struct {
     const right = 0x111;
     const middle = 0x112;
 };
+const XcusorTheme = struct {
+    name: []const u8,
+    size: u32,
+};
 const XkbBinding = struct {
     mode: Mode = .default,
     keysym: u32,
@@ -38,6 +42,8 @@ const BorderColor = struct {
     urgent: u32,
 };
 
+
+pub const xcusor_theme: ?XcusorTheme = null;
 
 pub const Mode = enum {
     default,
