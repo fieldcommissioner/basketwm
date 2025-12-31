@@ -468,8 +468,6 @@ pub fn handle_events(self: *Self) void {
                         self.rwm_window.informNotFullscreen();
                         self.rwm_window.exitFullscreen();
 
-                        std.debug.assert(output.fullscreen_window == self);
-
                         output.fullscreen_window = null;
                     }
                 }

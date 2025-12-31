@@ -63,6 +63,11 @@ pub fn create(
 pub fn destroy(self: *Self) void {
     defer log.debug("<{*}> destroied", .{ self });
 
+    if (self.fullscreen_window) |window| {
+        window.prepare_unfullscreen();
+        self.fullscreen_window = null;
+    }
+
     self.link.remove();
     self.rwm_output.destroy();
 
