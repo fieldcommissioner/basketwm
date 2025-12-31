@@ -48,6 +48,7 @@ pub const xcursor_theme: ?XcursorTheme = null;
 pub var auto_swallow = true;
 
 pub const Mode = enum {
+    lock, // do not delete, compile needed
     default,
     passthrough,
 };

@@ -41,7 +41,6 @@ terminal_windows: std.AutoHashMap(i32, *Window) = undefined,
 
 mode: config.Mode = .default,
 running: bool = true,
-locked: bool = false,
 env: process.EnvMap,
 
 
@@ -436,6 +435,10 @@ fn prepare_manage(self: *Self) void {
 fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event, context: *Self) void {
     std.debug.assert(rwm == context.rwm);
 
+    const cache = struct {
+        pub var mode: config.Mode = undefined;
+    };
+
     switch (event) {
         .finished => {
             log.debug("window manager finished", .{});
@@ -548,12 +551,13 @@ fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event,
         .session_locked => {
             log.debug("session locked", .{});
 
-            context.locked = true;
+            cache.mode = context.mode;
+            context.switch_mode(.lock);
         },
         .session_unlocked => {
             log.debug("session unlocked", .{});
 
-            context.locked = false;
+            context.switch_mode(cache.mode);
         }
     }
 }
