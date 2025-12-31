@@ -1,6 +1,7 @@
 const Self = @This();
 
 const std = @import("std");
+const mem = std.mem;
 const math = std.math;
 const log = std.log.scoped(.output);
 
@@ -22,6 +23,8 @@ rwm_layer_shell_output: ?*river.LayerShellOutputV1,
 
 tag: u32 = 1,
 main_tag: u32 = 1,
+prev_tag: u32 = 1,
+prev_main_tag: u32 = 1,
 layout_tag: [32]layout.Type = .{ config.default_layout } ** 32,
 fullscreen_window: ?*Window = null,
 
@@ -76,6 +79,9 @@ pub fn set_tag(self: *Self, tag: u32) void {
 
     log.debug("<{*}> set tag: {b}", .{ self, tag });
 
+    self.prev_tag = self.tag;
+    self.prev_main_tag = self.main_tag;
+
     self.tag = tag;
     if (self.main_tag & tag == 0) {
         // use the lowest bit 1 as new main tag
@@ -83,6 +89,14 @@ pub fn set_tag(self: *Self, tag: u32) void {
 
         log.debug("<{*}> update main tag to {b}", .{ self, self.main_tag });
     }
+}
+
+
+pub fn switch_to_previous_tag(self: *Self) void {
+    log.debug("<{*}> switch to previous tag", .{ self });
+
+    mem.swap(u32, &self.tag, &self.prev_tag);
+    mem.swap(u32, &self.main_tag, &self.prev_main_tag);
 }
 
 

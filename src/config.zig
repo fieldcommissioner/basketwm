@@ -352,6 +352,11 @@ pub const xkb_bindings = blk: {
             .action = .{ .snap = .{ .edges = .{ .top = true } } }
         },
         .{
+            .keysym = Keysym.Tab,
+            .modifiers = Super,
+            .action = .switch_to_previous_tag,
+        },
+        .{
             .keysym = Keysym.@"0",
             .modifiers = Super,
             .action = .{ .set_output_tag = .{ .tag = 0xffffffff } }
