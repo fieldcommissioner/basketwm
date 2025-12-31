@@ -74,11 +74,12 @@ pub var layout: struct {
         .master_location = .left,
     },
     .monocle = .{
-        .gap = 10,
+        .gap = 9,
     },
     .scroller = .{
         .mfact = 0.6,
-        .gap = 10,
+        .inner_gap = 16,
+        .outer_gap = 9,
     }
 };
 
@@ -114,7 +115,7 @@ fn modify_gap(context: *const Context, arg: *const binding.Arg) void {
         switch (output.current_layout()) {
             .tile => layout.tile.inner_gap = @max(0, layout.tile.inner_gap+arg.i),
             .monocle => layout.monocle.gap = @max(0, layout.monocle.gap+arg.i),
-            .scroller => layout.scroller.gap = @max(0, layout.scroller.gap+arg.i),
+            .scroller => layout.scroller.inner_gap = @max(0, layout.scroller.gap+arg.i),
             .float => {},
         }
     }
