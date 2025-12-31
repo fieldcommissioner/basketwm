@@ -12,7 +12,8 @@ const Window = @import("../window.zig");
 
 nmaster: i32,
 mfact: f32,
-gap: i32,
+inner_gap: i32,
+outer_gap: i32,
 master_location: enum {
     left,
     right,
@@ -44,9 +45,13 @@ pub fn arrange(self: *const Self, output: *Output) void {
 
     if (windows.items.len == 0) return;
 
-    const width, const height = switch (self.master_location) {
-        .left, .right => .{ output.width, output.height },
-        .top, .bottom => .{ output.height, output.width },
+    const usable_width, const usable_height = blk: {
+        const width = output.width -| 2*self.outer_gap;
+        const height = output.height -| 2*self.outer_gap;
+        break :blk switch (self.master_location) {
+            .left, .right => .{ width, height },
+            .top, .bottom => .{ height, width },
+        };
     };
 
     var master_width: i32 = undefined;
@@ -57,70 +62,56 @@ pub fn arrange(self: *const Self, output: *Output) void {
     var stack_remain: i32 = undefined;
 
     const window_num: i32 = @intCast(windows.items.len);
+    const nmaster = @min(window_num, self.nmaster);
     const nstack = window_num - self.nmaster;
     if (nstack > 0) {
-        const available_width = width -| 3*self.gap -| 4*config.border_width;
+        master_width = @intFromFloat(self.mfact * @as(f32, @floatFromInt(usable_width)));
+        master_height = @divFloor(usable_height, nmaster);
+        master_remain = @mod(usable_height, nmaster);
 
-        master_width = @intFromFloat(self.mfact * @as(f32, @floatFromInt(available_width)));
-        stack_width = available_width - master_width;
-
-        var available_height: i32 = undefined;
-
-        available_height = height -| (self.nmaster+1)*self.gap -| 2*self.nmaster*config.border_width;
-        master_height = @divFloor(available_height, self.nmaster);
-        master_remain = @mod(available_height, self.nmaster);
-
-        available_height = height -| (nstack+1)*self.gap -| 2*nstack*config.border_width;
-        stack_height = @divFloor(available_height, nstack);
-        stack_remain = @mod(available_height, nstack);
+        stack_width = usable_width - master_width;
+        stack_height = @divFloor(usable_height, nstack);
+        stack_remain = @mod(usable_height, nstack);
     } else {
-        const available_width = width -| 2*self.gap -| 2*config.border_width;
-        const available_height = height -| (self.nmaster+1)*self.gap -| 2*self.nmaster*config.border_width;
-        master_width = available_width;
-        master_height = @divFloor(available_height, self.nmaster);
-        master_remain = @mod(available_height, self.nmaster);
+        master_width = usable_width;
+        master_height = @divFloor(usable_height, nmaster);
+        master_remain = @mod(usable_height, nmaster);
     }
 
-    const step = self.gap + 2*config.border_width;
-    const master_x = self.gap + config.border_width;
-    const stack_x = master_x + master_width + step;
-    var master_y = self.gap + config.border_width;
-    var stack_y = self.gap + config.border_width;
+    const pad = @divFloor(self.inner_gap, 2);
     for (0.., windows.items) |i, window| {
         var x: i32 = undefined;
         var y: i32 = undefined;
         var w: i32 = undefined;
         var h: i32 = undefined;
-        if (i < self.nmaster) {
-            x = master_x;
-            y = master_y;
-            w = master_width;
-            h = master_height + if (i == 0) master_remain else 0;
-            master_y += master_height + step;
+        if (i < nmaster) {
+            x = 0;
+            y = (@as(i32, @intCast(i)) * master_height) + if (i > 0) master_remain + pad else 0;
+            w = if (nstack > 0) master_width - pad else master_width;
+            h = (master_height + if (i == 0) master_remain else 0) - if (nmaster > 1) pad else 0;
         } else {
-            x = stack_x;
-            y = stack_y;
-            w = stack_width;
-            h = stack_height + if (i == nstack) stack_remain else 0;
-            stack_y += stack_height + step;
+            x = master_width + pad;
+            y = ((@as(i32, @intCast(i))-nmaster) * stack_height) + if (i > nmaster) stack_remain + pad else 0;
+            w = stack_width - pad;
+            h = (stack_height + if (i == nmaster) stack_remain else 0) - if (nstack > 1) pad else 0;
         }
 
         switch (self.master_location) {
             .left => {
-                window.move(x, y);
-                window.resize(w, h);
+                window.unbound_move(x+self.outer_gap, y+self.outer_gap);
+                window.unbound_resize(w, h);
             },
             .right => {
-                window.move(width-x-w, y);
-                window.resize(w, h);
+                window.unbound_move(usable_width-x-w+self.outer_gap, y+self.outer_gap);
+                window.unbound_resize(w, h);
             },
             .top => {
-                window.move(y, x);
-                window.resize(h, w);
+                window.unbound_move(y+self.outer_gap, x+self.outer_gap);
+                window.unbound_resize(h, w);
             },
             .bottom => {
-                window.move(y, width-x-w);
-                window.resize(h, w);
+                window.unbound_move(y+self.outer_gap, usable_width-x-w+self.outer_gap);
+                window.unbound_resize(h, w);
             }
         }
     }
