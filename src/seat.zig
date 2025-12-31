@@ -20,7 +20,7 @@ link: wl.list.Link = undefined,
 rwm_seat: *river.SeatV1,
 rwm_layer_shell_seat: *river.LayerShellSeatV1,
 
-new: bool = undefined,
+mode: ?config.Mode = null,
 focus_exclusive: bool = false,
 window_below_pointer: ?*Window = null,
 unhandled_actions: std.ArrayList(binding.Action) = undefined,
@@ -41,7 +41,6 @@ pub fn create(rwm_seat: *river.SeatV1) !*Self {
     seat.* = .{
         .rwm_seat = rwm_seat,
         .rwm_layer_shell_seat = rwm_layer_shell_seat,
-        .new = true,
         .unhandled_actions = try .initCapacity(utils.allocator, 2),
         .xkb_bindings = .init(.{}),
         .pointer_bindings = .init(.{}),
@@ -174,9 +173,12 @@ pub fn manage(self: *Self) void {
 
     const context = Context.get();
 
-    if (self.new) {
-        defer self.new = false;
+    if (self.mode != context.mode) {
+        defer self.mode = context.mode;
 
+        if (self.mode) |mode| {
+            self.toggle_bindings(mode, false);
+        }
         self.toggle_bindings(context.mode, true);
     }
 

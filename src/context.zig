@@ -276,16 +276,9 @@ pub fn prepare_remove_seat(self: *Self, seat: *Seat) void {
 }
 
 
-pub fn switch_mode(self: *Self, mode: config.Mode) void {
+pub inline fn switch_mode(self: *Self, mode: config.Mode) void {
     log.debug("switch mode from {s} to {s}", .{ @tagName(self.mode), @tagName(mode) });
 
-    {
-        var it = self.seats.safeIterator(.forward);
-        while (it.next()) |seat| {
-            seat.toggle_bindings(self.mode, false);
-            seat.toggle_bindings(mode, true);
-        }
-    }
     self.mode = mode;
 }
 
