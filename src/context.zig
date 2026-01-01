@@ -488,8 +488,8 @@ fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event,
                         window.hide();
                     }
 
-                    if (window.fullscreen != .output) window.set_border(
-                        config.border_width,
+                    window.set_border(
+                        if (window.fullscreen == .output) 0 else config.border_width,
                         if (!context.focus_exclusive() and window == focused)
                             config.border_color.focus
                         else config.border_color.unfocus
