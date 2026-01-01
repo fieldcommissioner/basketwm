@@ -351,7 +351,10 @@ pub fn toggle_floating(self: *Self) void {
 
 pub fn is_visible(self: *Self) bool {
     if (self.output) |output| {
-        return (self.tag & output.tag) != 0 and self.swallowed_by == null;
+        return
+            (self.tag & output.tag) != 0
+            and self.swallowed_by == null
+            and if (output.fullscreen_window) |window| window == self else true;
     }
     return false;
 }
