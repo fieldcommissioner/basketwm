@@ -215,10 +215,10 @@ fn handle_actions(self: *Self) void {
                 }
             },
             .spawn => |data| {
-                context.spawn(data.argv);
+                _ = context.spawn(data.argv);
             },
             .spawn_shell => |data| {
-                context.spawn_shell(data.cmd);
+                _ = context.spawn_shell(data.cmd);
             },
             .move => |data| {
                 if (context.focused_window()) |window| {

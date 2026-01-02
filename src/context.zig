@@ -46,6 +46,7 @@ terminal_windows: std.AutoHashMap(i32, *Window) = undefined,
 mode: config.Mode = .default,
 running: bool = true,
 env: process.EnvMap,
+startup_processes: [config.startup_cmds.len]?process.Child = undefined,
 
 
 pub fn init(
@@ -89,8 +90,8 @@ pub fn init(
         };
     }
 
-    for (config.startup_cmds) |cmd| {
-        ctx.?.spawn(cmd);
+    for (0.., config.startup_cmds) |i, cmd| {
+        ctx.?.startup_processes[i] = ctx.?.spawn(cmd);
     }
 
     rwm.setListener(*Self, rwm_listener, &ctx.?);
@@ -151,6 +152,16 @@ pub fn deinit() void {
     ctx.?.terminal_windows.deinit();
 
     ctx.?.env.deinit();
+
+    for (&ctx.?.startup_processes) |*proc| {
+        if (proc.*) |*child| {
+            _ = child.kill() catch |err| {
+                log.err("kill startup process {} failed: {}", .{ child.id, err });
+                continue;
+            };
+            log.debug("kill startup process {}", .{ child.id });
+        }
+    }
 }
 
 
@@ -386,11 +397,11 @@ pub inline fn set_current_seat(self: *Self, seat: ?*Seat) void {
 }
 
 
-pub fn spawn(self: *Self, argv: []const []const u8) void {
+pub fn spawn(self: *Self, argv: []const []const u8) ?process.Child {
     if (builtins.mode == .Debug) {
         const cmd = mem.join(utils.allocator, " ", argv) catch |err| {
             log.err("join failed: {}", .{ err });
-            return;
+            return null;
         };
         defer utils.allocator.free(cmd);
 
@@ -406,13 +417,14 @@ pub fn spawn(self: *Self, argv: []const []const u8) void {
     };
     child.spawn() catch |err| {
         log.err("spawn failed: {}", .{ err });
-        return;
+        return null;
     };
+    return child;
 }
 
 
-pub inline fn spawn_shell(self: *Self, cmd: []const u8) void {
-    self.spawn(&[_][]const u8 { "sh", "-c", cmd });
+pub inline fn spawn_shell(self: *Self, cmd: []const u8) ?process.Child {
+    return self.spawn(&[_][]const u8 { "sh", "-c", cmd });
 }
 
 
