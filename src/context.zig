@@ -17,6 +17,7 @@ const config = @import("config.zig");
 const Seat = @import("seat.zig");
 const Output = @import("output.zig");
 const Window = @import("window.zig");
+const InputDevice = @import("input_device.zig");
 
 var ctx: ?Self = null;
 
@@ -27,12 +28,15 @@ wp_single_pixel_buffer_manager: *wp.SinglePixelBufferManagerV1,
 rwm: *river.WindowManagerV1,
 rwm_xkb_bindings: *river.XkbBindingsV1,
 rwm_layer_shell: *river.LayerShellV1,
+rwm_input_manager: ?*river.InputManagerV1,
 
 seats: wl.list.Head(Seat, .link) = undefined,
 current_seat: ?*Seat = null,
 
 outputs: wl.list.Head(Output, .link) = undefined,
 current_output: ?*Output = null,
+
+input_devices: wl.list.Head(InputDevice, .link) = undefined,
 
 windows: wl.list.Head(Window, .link) = undefined,
 focus_stack: wl.list.Head(Window, .flink) = undefined,
@@ -50,7 +54,8 @@ pub fn init(
     wp_single_pixel_buffer_manager: *wp.SinglePixelBufferManagerV1,
     rwm: *river.WindowManagerV1,
     rwm_xkb_bindings: *river.XkbBindingsV1,
-    rwm_layer_shell: *river.LayerShellV1
+    rwm_layer_shell: *river.LayerShellV1,
+    rwm_input_manager: *river.InputManagerV1,
 ) void {
     // initialize once
     if (ctx != null) return;
@@ -64,6 +69,7 @@ pub fn init(
         .rwm = rwm,
         .rwm_xkb_bindings = rwm_xkb_bindings,
         .rwm_layer_shell = rwm_layer_shell,
+        .rwm_input_manager = rwm_input_manager,
         .terminal_windows = .init(utils.allocator),
         .env = process.getEnvMap(utils.allocator) catch |err| blk: {
             log.warn("get EnvMap failed: {}", .{ err });
@@ -73,6 +79,7 @@ pub fn init(
     ctx.?.seats.init();
     ctx.?.outputs.init();
     ctx.?.windows.init();
+    ctx.?.input_devices.init();
     ctx.?.focus_stack.init();
 
     for (config.env) |pair| {
@@ -87,6 +94,7 @@ pub fn init(
     }
 
     rwm.setListener(*Self, rwm_listener, &ctx.?);
+    rwm_input_manager.setListener(*Self, rwm_input_manager_listener, &ctx.?);
 }
 
 
@@ -103,6 +111,7 @@ pub fn deinit() void {
     ctx.?.rwm.destroy();
     ctx.?.rwm_xkb_bindings.destroy();
     ctx.?.rwm_layer_shell.destroy();
+    if (ctx.?.rwm_input_manager) |rwm_input_manager| rwm_input_manager.destroy();
 
     {
         var it = ctx.?.seats.safeIterator(.forward);
@@ -121,6 +130,14 @@ pub fn deinit() void {
         ctx.?.outputs.init();
     }
     ctx.?.current_output = null;
+
+    {
+        var it = ctx.?.input_devices.safeIterator(.forward);
+        while (it.next()) |input_device| {
+            input_device.destroy();
+        }
+        ctx.?.input_devices.init();
+    }
 
     {
         var it = ctx.?.windows.safeIterator(.forward);
@@ -578,6 +595,30 @@ fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event,
             log.debug("session unlocked", .{});
 
             context.switch_mode(cache.mode);
+        }
+    }
+}
+
+
+fn rwm_input_manager_listener(rwm_input_manager: *river.InputManagerV1, event: river.InputManagerV1.Event, context: *Self) void {
+    std.debug.assert(rwm_input_manager == context.rwm_input_manager.?);
+
+    switch (event) {
+        .input_device => |data| {
+            log.debug("new input_device {*}", .{ data.id });
+
+            const input_device = InputDevice.create(data.id) catch |err| {
+                log.err("create input device failed: {}", .{ err });
+                return;
+            };
+
+            context.input_devices.append(input_device);
+        },
+        .finished => {
+            log.debug("{*} finished", .{ rwm_input_manager });
+
+            rwm_input_manager.destroy();
+            context.rwm_input_manager = null;
         }
     }
 }

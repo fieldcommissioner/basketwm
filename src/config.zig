@@ -58,6 +58,10 @@ pub const startup_cmds = [_][]const []const u8 {
 
 pub const xcursor_theme: ?XcursorTheme = null;
 
+pub const repeat_rate = 50;
+pub const repeat_delay = 300;
+pub const scroll_factor = 1.0;
+
 pub var auto_swallow = true;
 
 pub const Mode = enum {
