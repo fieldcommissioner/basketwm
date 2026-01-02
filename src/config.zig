@@ -1,4 +1,5 @@
 const std = @import("std");
+const fmt = std.fmt;
 
 const xkb = @import("xkbcommon");
 const Keysym = xkb.Keysym;
@@ -42,6 +43,22 @@ const BorderColor = struct {
     urgent: u32,
 };
 
+const font = "FiraCode Nerd Font";
+const font_size = 15;
+const menu_font_size = 20;
+const norm_fg = 0x828bb8ff;
+const norm_bg = 0x1b1d2bd0;
+const norm_border = 0x828bb8ff;
+const sele_fg = 0x444a73ff;
+const sele_bg = 0xc8d3f5d0;
+const sele_border = 0xffc777ff;
+const menu_options = fmt.comptimePrint(
+    "-ci -l 9 -f '{s}, {}' -n {x} -N {x} -m {x} -M {x} -s {x} -S {x}",
+    .{ font, menu_font_size, norm_fg, norm_bg, norm_fg, norm_bg, sele_fg, sele_bg },
+);
+const audio_script = "$HOME/.local/bin/audio";
+const bright_script = "$HOME/.local/bin/bright";
+
 pub const env = [_] struct { []const u8, []const u8 } {
     // .{ "key", "value" },
 };
@@ -73,7 +90,7 @@ pub const Mode = enum {
 pub var border_width: i32 = 3;
 pub const border_color: BorderColor = .{
     .focus = 0xffc777,
-    .unfocus = 0x828bb8,
+    .unfocus = 0x1b1d2b,
     .urgent = 0xff0000,
 };
 
@@ -95,7 +112,7 @@ pub var layout: struct {
         .gap = 9,
     },
     .scroller = .{
-        .mfact = 0.6,
+        .mfact = 0.7,
         .inner_gap = 16,
         .outer_gap = 9,
     }
@@ -246,12 +263,12 @@ pub const xkb_bindings = blk: {
         },
         .{
             .keysym = Keysym.j,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Shift|Alt,
             .action = .{ .focus_iter = .{ .direction = .forward } },
         },
         .{
             .keysym = Keysym.k,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Shift|Alt,
             .action = .{ .focus_iter = .{ .direction = .reverse } },
         },
         .{
@@ -351,22 +368,22 @@ pub const xkb_bindings = blk: {
         },
         .{
             .keysym = Keysym.l,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Ctrl|Alt,
             .action = .{ .resize = .{ .step = .{ .horizontal = 10 } } }
         },
         .{
             .keysym = Keysym.h,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Ctrl|Alt,
             .action = .{ .resize = .{ .step = .{ .horizontal = -10 } } }
         },
         .{
             .keysym = Keysym.j,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Ctrl|Alt,
             .action = .{ .resize = .{ .step = .{ .vertical = 10 } } }
         },
         .{
             .keysym = Keysym.k,
-            .modifiers = Super|Alt,
+            .modifiers = Super|Ctrl|Alt,
             .action = .{ .resize = .{ .step = .{ .vertical = -10 } } }
         },
         .{
@@ -402,12 +419,117 @@ pub const xkb_bindings = blk: {
         .{
             .keysym = Keysym.p,
             .modifiers = Super,
-            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "wmenu-run" } } },
+            .action = .{ .spawn_shell = .{ .cmd = fmt.comptimePrint("wmenu-run {s}", .{ menu_options }) } },
         },
         .{
             .keysym = Keysym.Return,
             .modifiers = Super|Shift,
-            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "foot" } } },
+            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "footclient" } } },
+        },
+        .{
+            .keysym = Keysym.e,
+            .modifiers = Super,
+            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "footclient", "lf" } } },
+        },
+        .{
+            .keysym = Keysym.l,
+            .modifiers = Super|Shift,
+            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "wayland_lock" } } },
+        },
+        .{
+            .keysym = Keysym.Print,
+            .modifiers = 0,
+            .action = .{ .spawn_shell = .{ .cmd = "grim -| wl-copy && notify-send 'Screenshot taken'" } },
+        },
+        .{
+            .keysym = Keysym.s,
+            .modifiers = Super|Shift,
+            .action = .{ .spawn_shell = .{ .cmd = "sleep 0.2; slurp | xargs -I {} grim -g {} -| wl-copy" } },
+        },
+        .{
+            .keysym = Keysym.k,
+            .modifiers = Super|Shift,
+            .action = .{
+                .spawn_shell = .{
+                    .cmd = fmt.comptimePrint(
+                        "if pgrep -x wshowkeys > /dev/null; then killall wshowkeys; else wshowkeys -b {x} -f {x} -F '{s} 60' -a bottom -m 60; fi",
+                        .{ norm_fg, norm_bg, font }
+                    ),
+                },
+            },
+        },
+        .{
+            .keysym = Keysym.v,
+            .modifiers = Super,
+            .action = .{
+                .spawn_shell = .{
+                    .cmd = fmt.comptimePrint(
+                        "cliphist list | wmenu {s} | {{ read -r selection; [ -n \"$selection\" ] && echo \"$selection\" | cliphist decode | wl-copy; }}",
+                        .{ menu_options },
+                    ),
+                },
+            },
+        },
+        .{
+            .keysym = Keysym.v,
+            .modifiers = Super|Shift,
+            .action = .{
+                .spawn_shell = .{
+                    .cmd = fmt.comptimePrint(
+                        "cliphist list | wmenu {s} | cliphist delete",
+                        .{ menu_options },
+                    ),
+                },
+            },
+        },
+        .{
+            .keysym = Keysym.Caps_Lock,
+            .modifiers = 0,
+            .action = .{
+                .spawn_shell = .{ .cmd = "sleep 0.2; $HOME/.local/bin/capslock" },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioRaiseVolume,
+            .modifiers = 0,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} sink --plus", .{ audio_script }) },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioLowerVolume,
+            .modifiers = 0,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} sink --minus", .{ audio_script }) },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioMute,
+            .modifiers = 0,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} sink --mute", .{ audio_script }) },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioRaiseVolume,
+            .modifiers = Super,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} source --plus", .{ audio_script }) },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioLowerVolume,
+            .modifiers = Super,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} source --minus", .{ audio_script }) },
+            },
+        },
+        .{
+            .keysym = Keysym.XF86AudioMute,
+            .modifiers = Super,
+            .action = .{
+                .spawn_shell = .{ .cmd = fmt.comptimePrint("{s} source --mute", .{ audio_script }) },
+            },
         },
     };
 
@@ -467,6 +589,7 @@ pub const rules = [_]Rule {
     //     .is_terminal = true,
     //     .disable_swallow = true,
     // },
+    .{ .app_id = .{ .str = "" }, .floating = true },
     .{ .app_id = .{ .str = "chromium" }, .tag = 1 << 1 },
     .{ .app_id = .{ .str = "QQ" }, .tag = 1 << 2, .floating = true },
     .{ .app_id = .{ .str = "wemeetapp" }, .tag = 1 << 2, .floating = true },
@@ -478,4 +601,5 @@ pub const rules = [_]Rule {
     .{ .app_id = .{ .str = "lazarus" }, .floating = true },
     .{ .app_id = .{ .str = "ONLYOFFICE" }, .floating = true },
     .{ .app_id = .{ .str = "foot" }, .is_terminal = true },
+    .{ .app_id = .{ .str = "footclient" }, .is_terminal = true },
 };
