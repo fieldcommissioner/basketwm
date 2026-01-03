@@ -48,7 +48,11 @@ fullscreen: union(enum) {
 maximize: bool = false,
 floating: bool = false,
 hided: bool = false,
-cliped: bool = false,
+clip_state: enum {
+    unknow,
+    normal,
+    cliped,
+} = .unknow,
 
 tag: u32 = 1,
 pid: i32 = 0,
@@ -594,10 +598,10 @@ pub fn render(self: *Self) void {
         top = @max(top, 0);
         bottom = @min(bottom, self.output.?.height);
         self.rwm_window.setClipBox(left-self.x, top-self.y, right-left, bottom-top);
-        self.cliped = true;
-    } else if (self.cliped){
+        self.clip_state = .cliped;
+    } else if (self.clip_state != .normal){
         self.rwm_window.setClipBox(0, 0, 0, 0);
-        self.cliped = false;
+        self.clip_state = .normal;
     }
 
     self.rwm_window.show();
