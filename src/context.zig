@@ -513,7 +513,11 @@ fn rwm_listener(rwm: *river.WindowManagerV1, event: river.WindowManagerV1.Event,
 
             context.running = false;
         },
-        .unavailable => @panic("another window manager is already running"),
+        .unavailable => {
+            log.err("another window manager is already running", .{});
+
+            context.running = false;
+        },
         .manage_start => {
             log.debug("manage start", .{});
 
