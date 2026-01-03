@@ -103,6 +103,13 @@ pub fn init(
     rwm.setListener(*Self, rwm_listener, &ctx.?);
     rwm_input_manager.setListener(*Self, rwm_input_manager_listener, &ctx.?);
     rwm_libinput_config.setListener(*Self, rwm_libinput_config_listener, &ctx.?);
+
+    const action: posix.Sigaction = .{
+        .handler = .{ .handler = signal_handler },
+        .mask = posix.sigemptyset(),
+        .flags = 0,
+    };
+    posix.sigaction(posix.SIG.CHLD, &action, null);
 }
 
 
@@ -171,7 +178,7 @@ pub fn deinit() void {
 
     for (&ctx.?.startup_processes) |*proc| {
         if (proc.*) |*child| {
-            _ = child.kill() catch |err| {
+            posix.kill(child.id, posix.SIG.TERM) catch |err| {
                 log.err("kill startup process {} failed: {}", .{ child.id, err });
                 continue;
             };
@@ -683,6 +690,17 @@ fn rwm_libinput_config_listener(rwm_libinput_config: *river.LibinputConfigV1, ev
 
             rwm_libinput_config.destroy();
             context.rwm_libinput_config = null;
+        }
+    }
+}
+
+
+fn signal_handler(sig: c_int) callconv(.c) void {
+    if (sig == posix.SIG.CHLD) {
+        while (true) {
+            const res = posix.waitpid(-1, posix.W.NOHANG);
+            if (res.pid <= 0) break;
+            log.debug("wait pid {}", .{ res.pid });
         }
     }
 }
