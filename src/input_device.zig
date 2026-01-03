@@ -1,6 +1,7 @@
 const Self = @This();
 
 const std = @import("std");
+const mem = std.mem;
 const log = std.log.scoped(.input_device);
 
 const wayland = @import("wayland");
@@ -13,6 +14,9 @@ const config = @import("config.zig");
 link: wl.list.Link = undefined,
 
 rwm_input_device: *river.InputDeviceV1,
+
+name: ?[]const u8 = null,
+type: river.InputDeviceV1.Type = undefined,
 
 
 pub fn create(rwm_input_device: *river.InputDeviceV1) !*Self {
@@ -35,10 +39,23 @@ pub fn create(rwm_input_device: *river.InputDeviceV1) !*Self {
 pub fn destroy(self: *Self) void {
     log.debug("<{*}> destroied", .{ self });
 
+    if (self.name) |name| {
+        utils.allocator.free(name);
+    }
+
     self.link.remove();
     self.rwm_input_device.destroy();
 
     utils.allocator.destroy(self);
+}
+
+
+fn set_name(self: *Self, name: []const u8) void {
+    if (self.name) |name_| {
+        utils.allocator.free(name_);
+        self.name = null;
+    }
+    self.name = utils.allocator.dupe(u8, name) catch null;
 }
 
 
@@ -61,9 +78,13 @@ fn rwm_input_device_listener(rwm_input_device: *river.InputDeviceV1, event: rive
                 },
                 else => {}
             }
+
+            input_device.type = data.type;
         },
         .name => |data| {
             log.debug("<{*}> name: {s}", .{ input_device, data.name });
+
+            input_device.set_name(mem.span(data.name));
         },
         .removed => {
             log.debug("<{*}> removed", .{ input_device });

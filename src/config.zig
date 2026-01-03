@@ -79,6 +79,28 @@ pub const repeat_rate = 50;
 pub const repeat_delay = 300;
 pub const scroll_factor = 1.0;
 
+// libinput config
+pub const tap: river.LibinputDeviceV1.TapState = .enabled;
+pub const drag: river.LibinputDeviceV1.DragState = .enabled;
+pub const drag_lock: river.LibinputDeviceV1.DragLockState = .disabled;
+pub const three_finger_drag: river.LibinputDeviceV1.ThreeFingerDragState = .disabled;
+pub const tap_button_map: river.LibinputDeviceV1.TapButtonMap = .lrm;
+pub const natural_scroll: river.LibinputDeviceV1.NaturalScrollState = .enabled;
+pub const disable_while_typing: river.LibinputDeviceV1.DwtState = .enabled;
+pub const disable_while_trackpointing: river.LibinputDeviceV1.DwtpState = .enabled;
+pub const left_handed: river.LibinputDeviceV1.LeftHandedState = .disabled;
+pub const middle_button_emulation: river.LibinputDeviceV1.MiddleEmulationState = .disabled;
+pub const scroll_method: river.LibinputDeviceV1.ScrollMethod = .two_finger;
+pub const scroll_button: u32 = Button.middle;
+pub const scroll_button_lock: river.LibinputDeviceV1.ScrollButtonLockState = .disabled;
+pub const click_method: river.LibinputDeviceV1.ClickMethod = .button_areas;
+pub const clickfinger_button_map: river.LibinputDeviceV1.ClickfingerButtonMap = .lrm;
+pub const send_events_modes: river.LibinputDeviceV1.SendEventsModes.Enum = .enabled;
+pub const accel_profile: river.LibinputDeviceV1.AccelProfile = .adaptive;
+pub const accel_speed: f64 = 0.0;
+pub const calibration_matrix: ?[6]f32 = null;
+pub const rotation_angle: u32 = 0;
+
 pub var auto_swallow = true;
 
 pub const Mode = enum {

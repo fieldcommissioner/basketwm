@@ -18,6 +18,7 @@ const Seat = @import("seat.zig");
 const Output = @import("output.zig");
 const Window = @import("window.zig");
 const InputDevice = @import("input_device.zig");
+const LibinputDevice = @import("libinput_device.zig");
 
 var ctx: ?Self = null;
 
@@ -29,6 +30,7 @@ rwm: *river.WindowManagerV1,
 rwm_xkb_bindings: *river.XkbBindingsV1,
 rwm_layer_shell: *river.LayerShellV1,
 rwm_input_manager: ?*river.InputManagerV1,
+rwm_libinput_config: ?*river.LibinputConfigV1,
 
 seats: wl.list.Head(Seat, .link) = undefined,
 current_seat: ?*Seat = null,
@@ -37,6 +39,7 @@ outputs: wl.list.Head(Output, .link) = undefined,
 current_output: ?*Output = null,
 
 input_devices: wl.list.Head(InputDevice, .link) = undefined,
+libinput_devices: wl.list.Head(LibinputDevice, .link) = undefined,
 
 windows: wl.list.Head(Window, .link) = undefined,
 focus_stack: wl.list.Head(Window, .flink) = undefined,
@@ -57,6 +60,7 @@ pub fn init(
     rwm_xkb_bindings: *river.XkbBindingsV1,
     rwm_layer_shell: *river.LayerShellV1,
     rwm_input_manager: *river.InputManagerV1,
+    rwm_libinput_config: *river.LibinputConfigV1,
 ) void {
     // initialize once
     if (ctx != null) return;
@@ -71,6 +75,7 @@ pub fn init(
         .rwm_xkb_bindings = rwm_xkb_bindings,
         .rwm_layer_shell = rwm_layer_shell,
         .rwm_input_manager = rwm_input_manager,
+        .rwm_libinput_config = rwm_libinput_config,
         .terminal_windows = .init(utils.allocator),
         .env = process.getEnvMap(utils.allocator) catch |err| blk: {
             log.warn("get EnvMap failed: {}", .{ err });
@@ -81,6 +86,7 @@ pub fn init(
     ctx.?.outputs.init();
     ctx.?.windows.init();
     ctx.?.input_devices.init();
+    ctx.?.libinput_devices.init();
     ctx.?.focus_stack.init();
 
     for (config.env) |pair| {
@@ -96,6 +102,7 @@ pub fn init(
 
     rwm.setListener(*Self, rwm_listener, &ctx.?);
     rwm_input_manager.setListener(*Self, rwm_input_manager_listener, &ctx.?);
+    rwm_libinput_config.setListener(*Self, rwm_libinput_config_listener, &ctx.?);
 }
 
 
@@ -113,6 +120,7 @@ pub fn deinit() void {
     ctx.?.rwm_xkb_bindings.destroy();
     ctx.?.rwm_layer_shell.destroy();
     if (ctx.?.rwm_input_manager) |rwm_input_manager| rwm_input_manager.destroy();
+    if (ctx.?.rwm_libinput_config) |rwm_libinput_config| rwm_libinput_config.destroy();
 
     {
         var it = ctx.?.seats.safeIterator(.forward);
@@ -138,6 +146,14 @@ pub fn deinit() void {
             input_device.destroy();
         }
         ctx.?.input_devices.init();
+    }
+
+{
+        var it = ctx.?.libinput_devices.safeIterator(.forward);
+        while (it.next()) |libinput_device| {
+            libinput_device.destroy();
+        }
+        ctx.?.libinput_devices.init();
     }
 
     {
@@ -639,6 +655,30 @@ fn rwm_input_manager_listener(rwm_input_manager: *river.InputManagerV1, event: r
 
             rwm_input_manager.destroy();
             context.rwm_input_manager = null;
+        }
+    }
+}
+
+
+fn rwm_libinput_config_listener(rwm_libinput_config: *river.LibinputConfigV1, event: river.LibinputConfigV1.Event, context: *Self) void {
+    std.debug.assert(rwm_libinput_config == context.rwm_libinput_config);
+
+    switch (event) {
+        .libinput_device => |data| {
+            log.debug("new libinput_device {*}", .{ data.id });
+
+            const libinput_device = LibinputDevice.create(data.id) catch |err| {
+                log.err("create libinput device failed: {}", .{ err });
+                return;
+            };
+
+            context.libinput_devices.append(libinput_device);
+        },
+        .finished => {
+            log.debug("{*} finished", .{ rwm_libinput_config });
+
+            rwm_libinput_config.destroy();
+            context.rwm_libinput_config = null;
         }
     }
 }
