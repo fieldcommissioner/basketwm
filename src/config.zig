@@ -91,9 +91,9 @@ pub const Mode = enum {
 
 pub var border_width: i32 = 3;
 pub const border_color: BorderColor = .{
-    .focus = 0xffc777,
-    .unfocus = 0x1b1d2b,
-    .urgent = 0xff0000,
+    .focus = sele_border,
+    .unfocus = norm_border,
+    .urgent = 0xff0000ff,
 };
 
 

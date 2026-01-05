@@ -34,10 +34,10 @@ pub fn cycle_list(
 
 pub fn rgba(color: u32) struct { r: u32, g: u32, b: u32, a: u32 } {
     return .{
-        .r = @as(u32, (color >> 16) & 0xFF) * (0xFFFF_FFFF / 0xFF),
-        .g = @as(u32, (color >> 8) & 0xFF) * (0xFFFF_FFFF / 0xFF),
-        .b = @as(u32, (color >> 0) & 0xFF) * (0xFFFF_FFFF / 0xFF),
-        .a = 0xFFFF_FFFF,
+        .r = @as(u32, (color >> 24) & 0xFF) * (0xFFFF_FFFF / 0xFF),
+        .g = @as(u32, (color >> 16) & 0xFF) * (0xFFFF_FFFF / 0xFF),
+        .b = @as(u32, (color >> 8) & 0xFF) * (0xFFFF_FFFF / 0xFF),
+        .a = @as(u32, (color >> 0) & 0xFF) * (0xFFFF_FFFF / 0xFF),
     };
 }
 
