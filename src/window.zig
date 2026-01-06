@@ -74,6 +74,7 @@ width: i32 = 0,
 height: i32 = 0,
 min_width: i32 = 1,
 min_height: i32 = 1,
+scroller_mfact: ?f32 = null,
 operator: union(enum) {
     none,
     move: struct {

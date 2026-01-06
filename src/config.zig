@@ -606,7 +606,7 @@ pub const rules = [_]Rule {
     //     .disable_swallow = true,
     // },
     .{ .app_id = .{ .str = "" }, .floating = true },
-    .{ .app_id = .{ .str = "chromium" }, .tag = 1 << 1 },
+    .{ .app_id = .{ .str = "chromium" }, .tag = 1 << 1, .scroller_mfact = 0.9 },
     .{ .app_id = .{ .str = "QQ" }, .tag = 1 << 2, .floating = true },
     .{ .app_id = .{ .str = "wemeetapp" }, .tag = 1 << 2, .floating = true },
     .{ .app_id = .{ .str = "wechat" }, .tag = 1 << 2, .floating = true },
@@ -616,8 +616,8 @@ pub const rules = [_]Rule {
     .{ .app_id = .{ .str = "stalonetray" }, .floating = true },
     .{ .app_id = .{ .str = "lazarus" }, .floating = true },
     .{ .app_id = .{ .str = "ONLYOFFICE" }, .floating = true },
-    .{ .app_id = .{ .str = "foot" }, .is_terminal = true },
-    .{ .app_id = .{ .str = "footclient" }, .is_terminal = true },
+    .{ .app_id = .{ .str = "foot" }, .is_terminal = true, .scroller_mfact = 0.8 },
+    .{ .app_id = .{ .str = "footclient" }, .is_terminal = true, .scroller_mfact = 0.8 },
 };
 
 // libinput config

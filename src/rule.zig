@@ -44,6 +44,7 @@ floating: ?bool = null,
 decoration: ?Window.Decoration = null,
 is_terminal: ?bool = null,
 disable_swallow: ?bool = null,
+scroller_mfact: ?f32 = null,
 
 
 pub fn match(self: *const Self, window: *Window) bool {
@@ -77,4 +78,5 @@ pub fn apply(self: *const Self, window: *Window) void {
     if (self.decoration) |decoration| window.decoration = decoration;
     if (self.is_terminal) |is_terminal| window.is_terminal = is_terminal;
     if (self.disable_swallow) |disable_swallow| window.disable_swallow = disable_swallow;
+    if (self.scroller_mfact) |scroller_mfact| window.scroller_mfact = scroller_mfact;
 }

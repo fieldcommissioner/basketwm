@@ -20,7 +20,9 @@ pub fn arrange(self: *const Self, output: *Output) void {
 
     const focus_top = context.focus_top_in(output, true) orelse return;
 
-    const master_width: i32 = @intFromFloat(@as(f32, @floatFromInt(output.width)) * self.mfact);
+    const master_width: i32 = @intFromFloat(
+        @as(f32, @floatFromInt(output.width)) * (focus_top.scroller_mfact orelse self.mfact)
+    );
     const height = output.height - 2*self.outer_gap;
     const master_x = @divFloor(output.width-master_width, 2);
     const y = self.outer_gap;
@@ -40,7 +42,9 @@ pub fn arrange(self: *const Self, output: *Output) void {
             if (x <= 0) {
                 window.hide();
             } else {
-                const width = master_width;
+                const width: i32 = @intFromFloat(
+                    @as(f32, @floatFromInt(output.width)) * (window.scroller_mfact orelse self.mfact)
+                );
 
                 x -= width;
                 window.unbound_move(x, y);
@@ -61,7 +65,9 @@ pub fn arrange(self: *const Self, output: *Output) void {
             if (x >= output.width) {
                 window.hide();
             } else {
-                const width = master_width;
+                const width: i32 = @intFromFloat(
+                    @as(f32, @floatFromInt(output.width)) * (window.scroller_mfact orelse self.mfact)
+                );
 
                 window.unbound_move(x, y);
                 window.unbound_resize(width, height);
