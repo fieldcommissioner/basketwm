@@ -129,6 +129,7 @@ pub fn destroy(self: *Self) void {
     self.link.remove();
     self.flink.remove();
     self.rwm_window.destroy();
+    self.rwm_window_node.destroy();
     self.set_appid(null);
     self.set_title(null);
     self.unhandled_events.deinit(utils.allocator);
