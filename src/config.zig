@@ -86,10 +86,11 @@ pub var auto_swallow = true;
 pub const Mode = enum {
     lock, // do not delete, compile needed
     default,
+    floating,
     passthrough,
 };
 
-pub var border_width: i32 = 3;
+pub var border_width: i32 = 5;
 pub const border_color: BorderColor = .{
     .focus = sele_border,
     .unfocus = norm_border,
@@ -114,7 +115,7 @@ pub var layout: struct {
         .gap = 9,
     },
     .scroller = .{
-        .mfact = 0.7,
+        .mfact = 0.5,
         .inner_gap = 16,
         .outer_gap = 9,
         .snap_to_left = false,
@@ -151,9 +152,9 @@ fn modify_gap(context: *const Context, arg: *const binding.Arg) void {
 
     if (context.current_output) |output| {
         switch (output.current_layout()) {
-            .tile => layout.tile.inner_gap = @max(0, layout.tile.inner_gap+arg.i),
-            .monocle => layout.monocle.gap = @max(0, layout.monocle.gap+arg.i),
-            .scroller => layout.scroller.inner_gap = @max(0, layout.scroller.gap+arg.i),
+            .tile => layout.tile.inner_gap = @max(border_width*2, layout.tile.inner_gap+arg.i),
+            .monocle => layout.monocle.gap = @max(border_width*2, layout.monocle.gap+arg.i),
+            .scroller => layout.scroller.inner_gap = @max(border_width*2, layout.scroller.inner_gap+arg.i),
             .float => {},
         }
     }
@@ -180,6 +181,20 @@ fn modify_master_location(context: *const Context, arg: *const binding.Arg) void
 }
 
 
+fn toggle_scroller_snap_to_left(context: *const Context, arg: *const binding.Arg) void {
+    std.debug.assert(arg.* == .none);
+
+    if (context.current_output) |output| {
+        switch (output.current_layout()) {
+            .scroller => {
+                layout.scroller.snap_to_left = !layout.scroller.snap_to_left;
+            },
+            else => {}
+        }
+    }
+}
+
+
 fn toggle_auto_swallow(_: *const Context, _: *const binding.Arg) void {
     auto_swallow = !auto_swallow;
 }
@@ -187,6 +202,7 @@ fn toggle_auto_swallow(_: *const Context, _: *const binding.Arg) void {
 
 pub const xkb_bindings = blk: {
     const bindings = [_]XkbBinding {
+        // passthrough
         .{
             .keysym = Keysym.Escape,
             .modifiers = Super|Shift,
@@ -195,10 +211,98 @@ pub const xkb_bindings = blk: {
         .{
             .mode = .passthrough,
             .keysym = Keysym.Escape,
-            .modifiers = Super,
+            .modifiers = Super|Shift,
             .action = .{ .switch_mode = .{ .mode = .default } }
         },
 
+
+        // floating
+        .{
+            .keysym = Keysym.f,
+            .modifiers = Super|Ctrl,
+            .action = .{ .switch_mode = .{ .mode = .floating } },
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.f,
+            .modifiers = Super|Ctrl,
+            .action = .{ .switch_mode = .{ .mode = .default } },
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.l,
+            .modifiers = Super,
+            .action = .{ .move = .{ .step = .{ .horizontal = 10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.h,
+            .modifiers = Super,
+            .action = .{ .move = .{ .step = .{ .horizontal = -10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.j,
+            .modifiers = Super,
+            .action = .{ .move = .{ .step = .{ .vertical = 10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.k,
+            .modifiers = Super,
+            .action = .{ .move = .{ .step = .{ .vertical = -10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.l,
+            .modifiers = Super|Ctrl,
+            .action = .{ .resize = .{ .step = .{ .horizontal = 10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.h,
+            .modifiers = Super|Ctrl,
+            .action = .{ .resize = .{ .step = .{ .horizontal = -10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.j,
+            .modifiers = Super|Ctrl,
+            .action = .{ .resize = .{ .step = .{ .vertical = 10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.k,
+            .modifiers = Super|Ctrl,
+            .action = .{ .resize = .{ .step = .{ .vertical = -10 } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.l,
+            .modifiers = Super|Shift,
+            .action = .{ .snap = .{ .edges = .{ .right = true } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.h,
+            .modifiers = Super|Shift,
+            .action = .{ .snap = .{ .edges = .{ .left = true } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.j,
+            .modifiers = Super|Shift,
+            .action = .{ .snap = .{ .edges = .{ .bottom = true } } }
+        },
+        .{
+            .mode = .floating,
+            .keysym = Keysym.k,
+            .modifiers = Super|Shift,
+            .action = .{ .snap = .{ .edges = .{ .top = true } } }
+        },
+
+
+        // default
         .{
             .keysym = Keysym.q,
             .modifiers = Super|Shift,
@@ -255,6 +359,16 @@ pub const xkb_bindings = blk: {
             .action = .{ .custom_fn = .{ .func = &modify_nmaster, .arg = .{ .i = -1 } } },
         },
         .{
+            .keysym = Keysym.equal,
+            .modifiers = Super|Alt,
+            .action = .{ .custom_fn = .{ .func = &modify_gap, .arg = .{ .i = 1 } } },
+        },
+        .{
+            .keysym = Keysym.minus,
+            .modifiers = Super|Alt,
+            .action = .{ .custom_fn = .{ .func = &modify_gap, .arg = .{ .i = -1 } } },
+        },
+        .{
             .keysym = Keysym.j,
             .modifiers = Super,
             .action = .{ .focus_iter = .{ .direction = .forward, .skip_floating = true, } },
@@ -266,12 +380,12 @@ pub const xkb_bindings = blk: {
         },
         .{
             .keysym = Keysym.j,
-            .modifiers = Super|Shift|Alt,
+            .modifiers = Super|Ctrl,
             .action = .{ .focus_iter = .{ .direction = .forward } },
         },
         .{
             .keysym = Keysym.k,
-            .modifiers = Super|Shift|Alt,
+            .modifiers = Super|Ctrl,
             .action = .{ .focus_iter = .{ .direction = .reverse } },
         },
         .{
@@ -305,8 +419,8 @@ pub const xkb_bindings = blk: {
             .action = .{ .send_to_output = .{ .direction = .reverse } },
         },
         .{
-            .keysym = Keysym.f,
-            .modifiers = Super,
+            .keysym = Keysym.m,
+            .modifiers = Super|Shift,
             .action = .{ .toggle_fullscreen = .{ .in_window = true } },
         },
         .{
@@ -315,8 +429,8 @@ pub const xkb_bindings = blk: {
             .action = .{ .toggle_fullscreen = .{} },
         },
         .{
-            .keysym = Keysym.f,
-            .modifiers = Super|Ctrl,
+            .keysym = Keysym.space,
+            .modifiers = Super,
             .action = .toggle_floating,
         },
         .{
@@ -330,8 +444,13 @@ pub const xkb_bindings = blk: {
             .action = .{ .custom_fn = .{ .func = &toggle_auto_swallow, .arg = .none } }
         },
         .{
+            .keysym = Keysym.h,
+            .modifiers = Super|Shift,
+            .action = .{ .custom_fn = .{ .func = &toggle_scroller_snap_to_left, .arg = .none } },
+        },
+        .{
             .keysym = Keysym.f,
-            .modifiers = Super|Ctrl|Alt,
+            .modifiers = Super,
             .action = .{ .switch_layout = .{ .layout = .float } },
         },
         .{
@@ -348,66 +467,6 @@ pub const xkb_bindings = blk: {
             .keysym = Keysym.s,
             .modifiers = Super,
             .action = .{ .switch_layout = .{ .layout = .scroller } },
-        },
-        .{
-            .keysym = Keysym.l,
-            .modifiers = Super|Ctrl,
-            .action = .{ .move = .{ .step = .{ .horizontal = 10 } } }
-        },
-        .{
-            .keysym = Keysym.h,
-            .modifiers = Super|Ctrl,
-            .action = .{ .move = .{ .step = .{ .horizontal = -10 } } }
-        },
-        .{
-            .keysym = Keysym.j,
-            .modifiers = Super|Ctrl,
-            .action = .{ .move = .{ .step = .{ .vertical = 10 } } }
-        },
-        .{
-            .keysym = Keysym.k,
-            .modifiers = Super|Ctrl,
-            .action = .{ .move = .{ .step = .{ .vertical = -10 } } }
-        },
-        .{
-            .keysym = Keysym.l,
-            .modifiers = Super|Ctrl|Alt,
-            .action = .{ .resize = .{ .step = .{ .horizontal = 10 } } }
-        },
-        .{
-            .keysym = Keysym.h,
-            .modifiers = Super|Ctrl|Alt,
-            .action = .{ .resize = .{ .step = .{ .horizontal = -10 } } }
-        },
-        .{
-            .keysym = Keysym.j,
-            .modifiers = Super|Ctrl|Alt,
-            .action = .{ .resize = .{ .step = .{ .vertical = 10 } } }
-        },
-        .{
-            .keysym = Keysym.k,
-            .modifiers = Super|Ctrl|Alt,
-            .action = .{ .resize = .{ .step = .{ .vertical = -10 } } }
-        },
-        .{
-            .keysym = Keysym.l,
-            .modifiers = Super|Ctrl|Shift,
-            .action = .{ .snap = .{ .edges = .{ .right = true } } }
-        },
-        .{
-            .keysym = Keysym.h,
-            .modifiers = Super|Ctrl|Shift,
-            .action = .{ .snap = .{ .edges = .{ .left = true } } }
-        },
-        .{
-            .keysym = Keysym.j,
-            .modifiers = Super|Ctrl|Shift,
-            .action = .{ .snap = .{ .edges = .{ .bottom = true } } }
-        },
-        .{
-            .keysym = Keysym.k,
-            .modifiers = Super|Ctrl|Shift,
-            .action = .{ .snap = .{ .edges = .{ .top = true } } }
         },
         .{
             .keysym = Keysym.Tab,
@@ -451,7 +510,7 @@ pub const xkb_bindings = blk: {
         },
         .{
             .keysym = Keysym.k,
-            .modifiers = Super|Shift,
+            .modifiers = Super|Ctrl|Shift,
             .action = .{
                 .spawn_shell = .{
                     .cmd = fmt.comptimePrint(
@@ -592,6 +651,9 @@ pub const pointer_bindings = [_]PointerBinding {
 };
 
 
+fn empty_appid(_: *const Rule, window: *const Window) bool {
+    return window.app_id == null or window.app_id.?.len == 0;
+}
 pub const rules = [_]Rule {
     //  support regex by: https://github.com/mnemnion/mvzr
     // .{
@@ -606,7 +668,7 @@ pub const rules = [_]Rule {
     //     .is_terminal = true,
     //     .disable_swallow = true,
     // },
-    .{ .app_id = .{ .str = "" }, .floating = true },
+    .{ .alter_match_fn = &empty_appid, .floating = true },
     .{ .app_id = .{ .str = "chromium" }, .tag = 1 << 1, .scroller_mfact = 0.9 },
     .{ .app_id = .{ .str = "QQ" }, .tag = 1 << 2, .floating = true },
     .{ .app_id = .{ .str = "wemeetapp" }, .tag = 1 << 2, .floating = true },
