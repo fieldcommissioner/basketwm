@@ -590,13 +590,12 @@ pub fn render(self: *Self) void {
         return;
     }
 
-    if (
-        self.position_undefined
-        // dimensions event may not sent yet, width and height are not setted
-        and self.width > 0 and self.height > 0
-    ) {
+    if (self.position_undefined) {
         defer self.position_undefined = false;
         log.debug("<{*}> center to output {*}", .{ self, self.output });
+
+        if (self.width == 0) self.width = @divFloor(self.output.?.width, 2);
+        if (self.height == 0) self.height = @divFloor(self.output.?.height, 2);
         self.center();
     }
 
