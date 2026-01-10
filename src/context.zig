@@ -169,7 +169,7 @@ pub fn deinit() void {
         ctx.?.input_devices.init();
     }
 
-{
+    {
         var it = ctx.?.libinput_devices.safeIterator(.forward);
         while (it.next()) |libinput_device| {
             libinput_device.destroy();

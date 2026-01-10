@@ -576,8 +576,6 @@ pub fn manage(self: *Self) void {
 
 
 pub fn render(self: *Self) void {
-    log.debug("<{*}> rendering to (x: {}, y: {})", .{ self, self.x, self.y });
-
     defer self.hided = false;
 
     if (
@@ -598,8 +596,11 @@ pub fn render(self: *Self) void {
         and self.width > 0 and self.height > 0
     ) {
         defer self.position_undefined = false;
+        log.debug("<{*}> center to output {*}", .{ self, self.output });
         self.center();
     }
+
+    log.debug("<{*}> rendering to (x: {}, y: {})", .{ self, self.x, self.y });
 
     self.rwm_window_node.setPosition(
         self.output.?.x + self.x,
