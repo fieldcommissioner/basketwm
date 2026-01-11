@@ -11,6 +11,7 @@ const zwlr = wayland.client.zwlr;
 const utils = @import("utils");
 const kwm = @import("kwm");
 const popup_mod = @import("popup.zig");
+const theme = @import("theme");
 
 const Globals = struct {
     wl_compositor: ?*wl.Compositor = null,
@@ -31,6 +32,14 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
     defer if (gpa.deinit() != .ok) @panic("memory leak");
     utils.init_allocator(&gpa.allocator());
+
+    // Load theme before kwm init so values are applied
+    const config_dir = theme.getConfigDir(utils.allocator) catch "/etc/basket";
+    defer if (!std.mem.eql(u8, config_dir, "/etc/basket")) utils.allocator.free(config_dir);
+    theme.load(utils.allocator, config_dir) catch |err| {
+        std.debug.print("[theme] load failed: {}, using defaults\n", .{err});
+    };
+    theme.apply();
 
     const display = try wl.Display.connect(null);
     defer display.disconnect();
@@ -82,8 +91,7 @@ pub fn main() !void {
                     popup.setSeat(seat);
                 }
 
-                // Load config
-                const config_dir = popup_mod.zon_config.getConfigDir(utils.allocator) catch "/etc/basket";
+                // Load popup menu config (reuse theme config_dir)
                 popup.loadConfig(config_dir);
 
                 // Register popup callback with kwm
