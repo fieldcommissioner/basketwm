@@ -253,7 +253,7 @@ fn parseKeysym(key: []const u8) ?u32 {
 
     // F keys
     if (key.len >= 2 and key[0] == 'F') {
-        const num = std.fmt.parseInt(u8, key[1..], 10) catch return null;
+        const num = std.fmt.parseInt(u32, key[1..], 10) catch return null;
         if (num >= 1 and num <= 12) {
             return Keysym.F1 + (num - 1);
         }

@@ -13,6 +13,8 @@ const kwm = @import("kwm");
 const popup_mod = @import("popup.zig");
 const theme = @import("theme");
 const ipc = @import("ipc");
+const defaults = @import("defaults");
+const basket_config = @import("basket_config");
 
 const Globals = struct {
     wl_compositor: ?*wl.Compositor = null,
@@ -41,6 +43,9 @@ pub fn main() !void {
         std.debug.print("[theme] load failed: {}, using defaults\n", .{err});
     };
     theme.apply();
+
+    // Load runtime keybindings (defaults + basket.zon overrides)
+    loadRuntimeBindings(utils.allocator, config_dir);
 
     const display = try wl.Display.connect(null);
     defer display.disconnect();
@@ -191,4 +196,101 @@ fn registry_listener(registry: *wl.Registry, event: wl.Registry.Event, globals: 
         },
         .global_remove => {},
     }
+}
+
+/// Load runtime keybindings from defaults + basket.zon
+fn loadRuntimeBindings(allocator: mem.Allocator, config_dir: []const u8) void {
+    // Load basket.zon configuration
+    var basket_cfg = basket_config.load(allocator, config_dir) catch |err| {
+        std.debug.print("[bindings] basket.zon load failed: {}, using defaults only\n", .{err});
+        // Just use defaults via the fallback in runtime_bindings
+        return;
+    };
+    defer basket_cfg.deinit();
+
+    // If disable_defaults is true, only use basket.zon binds
+    if (basket_cfg.disable_defaults) {
+        std.debug.print("[bindings] disable_defaults=true, using basket.zon bindings only\n", .{});
+        // Convert basket_cfg.binds to runtime bindings
+        if (basket_cfg.binds.items.len > 0) {
+            var runtime_xkb = allocator.alloc(kwm.runtime_bindings.RuntimeXkbBinding, basket_cfg.binds.items.len) catch return;
+            var count: usize = 0;
+            for (basket_cfg.binds.items) |bind| {
+                if (bind.parsed_action) |action| {
+                    runtime_xkb[count] = .{
+                        .keysym = bind.keysym,
+                        .modifiers = bind.modifiers,
+                        .action = action,
+                    };
+                    count += 1;
+                }
+            }
+            kwm.runtime_bindings.setXkbBindings(runtime_xkb[0..count]);
+        }
+        return;
+    }
+
+    // Merge: defaults - unbinds + basket binds
+    var merged = std.ArrayListUnmanaged(kwm.runtime_bindings.RuntimeXkbBinding).empty;
+
+    // Add defaults (filtering out unbinds)
+    for (&defaults.xkb_bindings) |*def| {
+        // Check if this binding is unbound
+        var unbound = false;
+        for (basket_cfg.unbinds.items) |unbind| {
+            if (unbind.keysym == def.keysym and unbind.modifiers == def.modifiers) {
+                unbound = true;
+                break;
+            }
+        }
+        if (!unbound) {
+            merged.append(allocator, .{
+                .keysym = def.keysym,
+                .modifiers = def.modifiers,
+                .action = def.action,
+                // Mode conversion: defaults.Mode -> config.Mode (same values, different types)
+                .mode = @enumFromInt(@intFromEnum(def.mode)),
+                .event = def.event,
+            }) catch continue;
+        }
+    }
+
+    // Add basket.zon binds (may override defaults with same key combo)
+    for (basket_cfg.binds.items) |bind| {
+        if (bind.parsed_action) |action| {
+            // Remove any existing binding with same combo
+            var i: usize = 0;
+            while (i < merged.items.len) {
+                if (merged.items[i].keysym == bind.keysym and merged.items[i].modifiers == bind.modifiers) {
+                    _ = merged.swapRemove(i);
+                } else {
+                    i += 1;
+                }
+            }
+            // Add the new binding
+            merged.append(allocator, .{
+                .keysym = bind.keysym,
+                .modifiers = bind.modifiers,
+                .action = action,
+            }) catch continue;
+        }
+    }
+
+    if (merged.items.len > 0) {
+        kwm.runtime_bindings.setXkbBindings(merged.toOwnedSlice(allocator) catch return);
+        std.debug.print("[bindings] loaded {} keybindings (defaults + basket.zon)\n", .{merged.items.len});
+    }
+
+    // Also set pointer bindings from defaults
+    var ptr_bindings = allocator.alloc(kwm.runtime_bindings.RuntimePointerBinding, defaults.pointer_bindings.len) catch return;
+    for (&defaults.pointer_bindings, 0..) |*def, i| {
+        ptr_bindings[i] = .{
+            .button = def.button,
+            .modifiers = def.modifiers,
+            .action = def.action,
+            .mode = @enumFromInt(@intFromEnum(def.mode)),
+            .event = def.event,
+        };
+    }
+    kwm.runtime_bindings.setPointerBindings(ptr_bindings);
 }

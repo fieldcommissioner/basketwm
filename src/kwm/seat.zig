@@ -11,6 +11,7 @@ const config = @import("config");
 const utils = @import("utils");
 
 const binding = @import("binding.zig");
+const runtime_bindings = @import("runtime_bindings.zig");
 const Window = @import("window.zig");
 const Context = @import("context.zig");
 
@@ -50,8 +51,10 @@ pub fn create(rwm_seat: *river.SeatV1) !*Self {
     };
     seat.link.init();
 
-    for (&config.xkb_bindings) |*xkb_binding| {
-        log.debug("<{*}> add xkb binding: (mode: {s}, action: {any})", .{ xkb_binding, @tagName(xkb_binding.mode), xkb_binding.action });
+    // Use runtime bindings if set, otherwise fallback to config.xkb_bindings
+    var xkb_iter = runtime_bindings.xkbBindings();
+    while (xkb_iter.next()) |xkb_binding| {
+        log.debug("<{*}> add xkb binding: (mode: {s}, action: {any})", .{ seat, @tagName(xkb_binding.mode), xkb_binding.action });
 
         if (!seat.xkb_bindings.contains(xkb_binding.mode)) {
             seat.xkb_bindings.put(xkb_binding.mode, .empty);
@@ -69,8 +72,10 @@ pub fn create(rwm_seat: *river.SeatV1) !*Self {
         );
     }
 
-    for (&config.pointer_bindings) |*pointer_binding| {
-        log.debug("<{*}> add pointer binding: (mode: {s}, action: {any})", .{ pointer_binding, @tagName(pointer_binding.mode), pointer_binding.action });
+    // Use runtime pointer bindings if set, otherwise fallback to config.pointer_bindings
+    var ptr_iter = runtime_bindings.pointerBindings();
+    while (ptr_iter.next()) |pointer_binding| {
+        log.debug("<{*}> add pointer binding: (mode: {s}, action: {any})", .{ seat, @tagName(pointer_binding.mode), pointer_binding.action });
 
         if (!seat.pointer_bindings.contains(pointer_binding.mode)) {
             seat.pointer_bindings.put(pointer_binding.mode, .empty);
