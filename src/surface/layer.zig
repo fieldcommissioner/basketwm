@@ -172,9 +172,13 @@ pub const LayerSurface = struct {
         if (self.surface) |s| {
             if (self.buffer.?.getBuffer()) |buf| {
                 s.attach(buf, 0, 0);
+                // Tell compositor our buffer is rendered at scale
+                if (self.scale > 1.0) {
+                    s.setBufferScale(@intFromFloat(self.scale));
+                }
                 s.damageBuffer(0, 0, @intCast(self.width), @intCast(self.height));
                 s.commit();
-                std.debug.print("[layer] buffer attached and committed\n", .{});
+                std.debug.print("[layer] buffer attached and committed (scale={})\n", .{self.scale});
             }
         }
     }
@@ -202,6 +206,9 @@ pub const LayerSurface = struct {
             if (self.surface) |s| {
                 if (buf.getBuffer()) |wl_buf| {
                     s.attach(wl_buf, 0, 0);
+                    if (self.scale > 1.0) {
+                        s.setBufferScale(@intFromFloat(self.scale));
+                    }
                     s.damageBuffer(0, 0, @intCast(self.width), @intCast(self.height));
                     s.commit();
                 }
