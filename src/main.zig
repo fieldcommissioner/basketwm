@@ -85,8 +85,8 @@ pub fn main() !void {
             rwm_libinput_config,
         );
 
-        // Apply UI scale to context env so spawned apps inherit it
-        theme.applyScale(&kwm.Context.get().env);
+        // Note: UI scale handled by wlr-output-management (output_config.zig)
+        // Don't set GDK_SCALE/QT_SCALE_FACTOR - would double-scale apps
 
         // Initialize popup if layer shell is available
         if (globals.zwlr_layer_shell) |layer_shell| {
