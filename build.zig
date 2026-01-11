@@ -115,6 +115,25 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    const defaults_mod = b.createModule(.{
+        .root_source_file = b.path("src/defaults.zig"),
+        .imports = &.{
+            .{ .name = "wayland", .module = wayland_mod },
+            .{ .name = "xkbcommon", .module = xkbcommon_mod },
+            .{ .name = "kwm", .module = kwm_mod },
+        },
+    });
+
+    const basket_config_mod = b.createModule(.{
+        .root_source_file = b.path("src/config/basket_config.zig"),
+        .imports = &.{
+            .{ .name = "wayland", .module = wayland_mod },
+            .{ .name = "xkbcommon", .module = xkbcommon_mod },
+            .{ .name = "kwm", .module = kwm_mod },
+            .{ .name = "ipc", .module = ipc_mod },
+        },
+    });
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -153,6 +172,8 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "kwm", .module = kwm_mod },
                 .{ .name = "theme", .module = theme_mod },
                 .{ .name = "ipc", .module = ipc_mod },
+                .{ .name = "defaults", .module = defaults_mod },
+                .{ .name = "basket_config", .module = basket_config_mod },
             },
 
             .link_libc = true,

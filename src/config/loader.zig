@@ -1,21 +1,20 @@
-//! Configuration loader for deltas
+//! Configuration loader for basket delta layer (chord trees)
 //!
-//! Doom-style +module injection pattern:
+//! Doom-style configuration:
 //!
-//!   ~/.config/deltas/
-//!   ├── leader.zon        # root menu structure
+//!   ~/.config/basket/
+//!   ├── delta.zon         # chord tree root (newcomer-friendly)
 //!   ├── +window.zon       # injects at 'w'
-//!   ├── +tags.zon         # injects at 't'
 //!   ├── +apps.zon         # injects at 'o' (open)
 //!   ├── +git.zon          # injects at 'g'
-//!   └── +system.zon       # injects at 's'
+//!   └── basket.zon        # combo overrides (ricer territory)
 //!
 //! Module injection:
 //!   - Filename +X.zon → injects at key 'X'
 //!   - Filename +X-Y.zon → injects at key path X → Y
 //!   - Or explicit: .inject_at = "w" in the file
 //!
-//! Merge order: leader.zon first, then +modules alphabetically.
+//! Merge order: delta.zon first, then +modules alphabetically.
 //! Later files can override earlier ones (user wins).
 
 const std = @import("std");
@@ -79,11 +78,11 @@ pub const Loader = struct {
             .allocator = self.allocator,
         };
 
-        // Try to load leader.zon first
-        const leader_path = try std.fs.path.join(self.allocator, &.{ self.config_dir, "leader.zon" });
-        defer self.allocator.free(leader_path);
+        // Try to load delta.zon first (chord tree root)
+        const delta_path = try std.fs.path.join(self.allocator, &.{ self.config_dir, "delta.zon" });
+        defer self.allocator.free(delta_path);
 
-        if (zon.loadConfig(self.allocator, leader_path)) |module| {
+        if (zon.loadConfig(self.allocator, delta_path)) |module| {
             var mod = module;
             defer mod.deinit(self.allocator);
 
@@ -107,7 +106,7 @@ pub const Loader = struct {
         const root = try self.allocator.create(tree.Node);
         root.* = .{
             .key = ' ', // leader key
-            .label = try self.allocator.dupe(u8, module.label orelse "deltas"),
+            .label = try self.allocator.dupe(u8, module.label orelse "basket"),
             .node_type = .submenu,
             .behavior = .transient,
             .children = try self.convertChildren(module.children),
@@ -119,7 +118,7 @@ pub const Loader = struct {
         const root = try self.allocator.create(tree.Node);
         root.* = .{
             .key = ' ',
-            .label = try self.allocator.dupe(u8, "deltas"),
+            .label = try self.allocator.dupe(u8, "basket"),
             .node_type = .submenu,
             .behavior = .transient,
             .children = null,
@@ -278,10 +277,10 @@ pub fn load(allocator: std.mem.Allocator, config_dir: []const u8) !Config {
 pub fn getConfigDir(allocator: std.mem.Allocator) ![]const u8 {
     // XDG_CONFIG_HOME or ~/.config
     if (std.posix.getenv("XDG_CONFIG_HOME")) |xdg| {
-        return std.fs.path.join(allocator, &.{ xdg, "deltas" });
+        return std.fs.path.join(allocator, &.{ xdg, "basket" });
     }
     if (std.posix.getenv("HOME")) |home| {
-        return std.fs.path.join(allocator, &.{ home, ".config", "deltas" });
+        return std.fs.path.join(allocator, &.{ home, ".config", "basket" });
     }
     return error.NoHomeDir;
 }
