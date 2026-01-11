@@ -14,6 +14,9 @@ const binding = @import("binding.zig");
 const Window = @import("window.zig");
 const Context = @import("context.zig");
 
+// Callback for popup - set from main.zig
+pub var show_popup_callback: ?*const fn () void = null;
+
 
 link: wl.list.Link = undefined,
 
@@ -212,6 +215,13 @@ fn handle_actions(self: *Self) void {
             .close => {
                 if (context.focused_window()) |window| {
                     window.prepare_close();
+                }
+            },
+            .show_popup => {
+                if (show_popup_callback) |callback| {
+                    callback();
+                } else {
+                    log.warn("show_popup: no callback registered", .{});
                 }
             },
             .spawn => |data| {

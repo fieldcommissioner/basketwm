@@ -26,6 +26,7 @@ pub fn build(b: *std.Build) void {
 
     const scanner = wayland.Scanner.create(b, .{});
 
+    scanner.addSystemProtocol("stable/xdg-shell/xdg-shell.xml");
     scanner.addSystemProtocol("stable/viewporter/viewporter.xml");
     scanner.addSystemProtocol("staging/single-pixel-buffer/single-pixel-buffer-v1.xml");
     scanner.addCustomProtocol(b.path("protocol/river-window-management-v1.xml"));

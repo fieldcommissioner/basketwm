@@ -6,14 +6,19 @@ const wayland = @import("wayland");
 const wl = wayland.client.wl;
 const wp = wayland.client.wp;
 const river = wayland.client.river;
+const zwlr = wayland.client.zwlr;
 
 const utils = @import("utils");
 const kwm = @import("kwm");
+const popup_mod = @import("popup.zig");
 
 const Globals = struct {
     wl_compositor: ?*wl.Compositor = null,
+    wl_shm: ?*wl.Shm = null,
+    wl_seat: ?*wl.Seat = null,
     wp_viewporter: ?*wp.Viewporter = null,
     wp_single_pixel_buffer_manager: ?*wp.SinglePixelBufferManagerV1 = null,
+    zwlr_layer_shell: ?*zwlr.LayerShellV1 = null,
     rwm: ?*river.WindowManagerV1 = null,
     rwm_xkb_bindings: ?*river.XkbBindingsV1 = null,
     rwm_layer_shell: ?*river.LayerShellV1 = null,
@@ -58,8 +63,36 @@ pub fn main() !void {
             rwm_input_manager,
             rwm_libinput_config,
         );
+
+        // Initialize popup if layer shell is available
+        if (globals.zwlr_layer_shell) |layer_shell| {
+            if (globals.wl_shm) |shm| {
+                const popup = popup_mod.Popup.init(
+                    utils.allocator,
+                    wl_compositor,
+                    layer_shell,
+                    shm,
+                ) catch |err| {
+                    std.debug.print("[main] popup init failed: {}\n", .{err});
+                    return;
+                };
+
+                // Pass the seat to popup for keyboard handling
+                if (globals.wl_seat) |seat| {
+                    popup.setSeat(seat);
+                }
+
+                // Load config
+                const config_dir = popup_mod.zon_config.getConfigDir(utils.allocator) catch "/etc/basket";
+                popup.loadConfig(config_dir);
+
+                // Register popup callback with kwm
+                kwm.Seat.show_popup_callback = &showPopupWrapper;
+            }
+        }
     }
     defer kwm.Context.deinit();
+    defer if (popup_mod.Popup.get()) |popup| popup.deinit();
 
     const wayland_fd = display.getFd();
     var poll_fds = [_]posix.pollfd {
@@ -80,15 +113,29 @@ pub fn main() !void {
 }
 
 
+fn showPopupWrapper() void {
+    if (popup_mod.Popup.get()) |popup| {
+        popup.show() catch |err| {
+            std.debug.print("[popup] show failed: {}\n", .{err});
+        };
+    }
+}
+
 fn registry_listener(registry: *wl.Registry, event: wl.Registry.Event, globals: *Globals) void {
     switch (event) {
         .global => |global| {
             if (mem.orderZ(u8, global.interface, wl.Compositor.interface.name) == .eq) {
                 globals.wl_compositor = registry.bind(global.name, wl.Compositor, 4) catch return;
+            } else if (mem.orderZ(u8, global.interface, wl.Shm.interface.name) == .eq) {
+                globals.wl_shm = registry.bind(global.name, wl.Shm, 1) catch return;
+            } else if (mem.orderZ(u8, global.interface, wl.Seat.interface.name) == .eq) {
+                globals.wl_seat = registry.bind(global.name, wl.Seat, 7) catch return;
             } else if (mem.orderZ(u8, global.interface, wp.Viewporter.interface.name) == .eq) {
                 globals.wp_viewporter = registry.bind(global.name, wp.Viewporter, 1) catch return;
             } else if (mem.orderZ(u8, global.interface, wp.SinglePixelBufferManagerV1.interface.name) == .eq) {
                 globals.wp_single_pixel_buffer_manager = registry.bind(global.name, wp.SinglePixelBufferManagerV1, 1) catch return;
+            } else if (mem.orderZ(u8, global.interface, zwlr.LayerShellV1.interface.name) == .eq) {
+                globals.zwlr_layer_shell = registry.bind(global.name, zwlr.LayerShellV1, 4) catch return;
             } else if (mem.orderZ(u8, global.interface, river.WindowManagerV1.interface.name) == .eq) {
                 globals.rwm = registry.bind(global.name, river.WindowManagerV1, 2) catch return;
             } else if (mem.orderZ(u8, global.interface, river.XkbBindingsV1.interface.name) == .eq) {

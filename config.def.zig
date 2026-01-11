@@ -469,7 +469,13 @@ pub const xkb_bindings = blk: {
         .{
             .keysym = Keysym.Return,
             .modifiers = Super|Shift,
-            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "foot" } } },
+            .action = .{ .spawn = .{ .argv = &[_][]const u8 { "ghostty" } } },
+        },
+        // Popup menu (which-key style)
+        .{
+            .keysym = Keysym.d,
+            .modifiers = Super,
+            .action = .show_popup,
         },
     };
 
