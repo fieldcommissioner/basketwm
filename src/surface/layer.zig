@@ -4,6 +4,7 @@
 //!   - Floats above all windows (overlay layer)
 //!   - Grabs keyboard focus
 //!   - Can be positioned and sized
+//!   - Respects UI scale from theme.zon
 
 const std = @import("std");
 const wayland = @import("wayland");
@@ -12,6 +13,7 @@ const zwlr = wayland.client.zwlr;
 
 const render = @import("../render/mod.zig");
 const tree = @import("../tree/navigation.zig");
+const theme_mod = @import("theme");
 
 pub const LayerSurface = struct {
     compositor: *wl.Compositor,
@@ -25,20 +27,29 @@ pub const LayerSurface = struct {
     // Current menu node to display
     current_node: ?*const tree.Node = null,
 
-    // Surface dimensions
+    // Surface dimensions (scaled)
     width: u32 = 400,
     height: u32 = 300,
+    scale: f32 = 1.0,
 
     // State
     configured: bool = false,
     closed: bool = false,
 
     pub fn init(compositor: *wl.Compositor, layer_shell: *zwlr.LayerShellV1, shm: *wl.Shm) LayerSurface {
+        // Get scale from theme
+        const scale = theme_mod.get().scale;
+        const base_width: u32 = 400;
+        const base_height: u32 = 300;
+
         return .{
             .compositor = compositor,
             .layer_shell = layer_shell,
             .shm = shm,
-            .menu_renderer = render.MenuRenderer.init(.{}),
+            .menu_renderer = render.MenuRenderer.initScaled(.{}, scale),
+            .width = @intFromFloat(@as(f32, @floatFromInt(base_width)) * scale),
+            .height = @intFromFloat(@as(f32, @floatFromInt(base_height)) * scale),
+            .scale = scale,
         };
     }
 
@@ -84,8 +95,9 @@ pub const LayerSurface = struct {
         // Anchor to bottom-right corner
         ls.setAnchor(.{ .bottom = true, .right = true });
 
-        // Add margin from edge
-        ls.setMargin(0, 20, 20, 0); // top, right, bottom, left
+        // Add margin from edge (scaled)
+        const margin: i32 = @intFromFloat(20.0 * self.scale);
+        ls.setMargin(0, margin, margin, 0); // top, right, bottom, left
 
         // Set up listener for configure events
         ls.setListener(*LayerSurface, layerSurfaceListener, self);

@@ -38,9 +38,37 @@ pub const Theme = struct {
 pub const MenuRenderer = struct {
     theme: Theme,
     font: ?fcft.Font = null,
+    scale: f32 = 1.0,
 
     pub fn init(theme: Theme) MenuRenderer {
         return .{ .theme = theme };
+    }
+
+    /// Initialize with scale factor from theme.zon
+    pub fn initScaled(theme: Theme, scale: f32) MenuRenderer {
+        var scaled_theme = theme;
+        scaled_theme.padding = @intFromFloat(@as(f32, @floatFromInt(theme.padding)) * scale);
+        scaled_theme.line_height = @intFromFloat(@as(f32, @floatFromInt(theme.line_height)) * scale);
+        scaled_theme.key_width = @intFromFloat(@as(f32, @floatFromInt(theme.key_width)) * scale);
+
+        var renderer = MenuRenderer{
+            .theme = scaled_theme,
+            .scale = scale,
+        };
+
+        // Try to initialize fcft with scaled font size
+        const base_font_size: u32 = 14;
+        const scaled_font_size: u32 = @intFromFloat(@as(f32, @floatFromInt(base_font_size)) * scale);
+
+        if (fcft.Font.init("monospace", scaled_font_size)) |fnt| {
+            renderer.font = fnt;
+            renderer.theme.line_height = fnt.height() + @as(u32, @intFromFloat(4.0 * scale));
+            renderer.theme.key_width = fnt.measureString("w >") + @as(u32, @intFromFloat(8.0 * scale));
+        } else |_| {
+            // Fall back to bitmap font (won't scale well but better than nothing)
+        }
+
+        return renderer;
     }
 
     /// Initialize with fcft font
