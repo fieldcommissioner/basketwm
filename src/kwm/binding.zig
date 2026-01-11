@@ -24,6 +24,7 @@ pub const Arg = union(enum) {
 
 pub const Action = union(enum) {
     quit,
+    restart,
     close,
     show_popup,
     spawn: struct {

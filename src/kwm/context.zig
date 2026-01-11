@@ -226,6 +226,29 @@ pub fn quit(self: *Self) void {
     log.debug("quit kwm", .{});
 
     self.running = false;
+
+    // Also terminate the compositor (parent process) to end the Wayland session
+    const ppid = std.os.linux.getppid();
+    if (ppid > 1) { // Don't kill init
+        log.info("terminating compositor (pid {})", .{ppid});
+        posix.kill(@intCast(ppid), posix.SIG.TERM) catch |err| {
+            log.warn("failed to terminate compositor: {}", .{err});
+        };
+    }
+}
+
+pub fn restart(self: *Self) void {
+    log.info("restarting basket", .{});
+
+    self.running = false;
+
+    // Re-exec ourselves to restart with fresh state
+    // This preserves the compositor but reloads all basket config
+    const argv = [_:null]?[*:0]const u8{ "basket", null };
+    const result = posix.execvpeZ("basket", &argv, std.c.environ);
+
+    // If exec failed, log it (we'll still exit via running = false)
+    log.err("restart exec failed: {}", .{result});
 }
 
 

@@ -217,6 +217,9 @@ fn handle_actions(self: *Self) void {
             .quit => {
                 context.quit();
             },
+            .restart => {
+                context.restart();
+            },
             .close => {
                 if (context.focused_window()) |window| {
                     window.prepare_close();

@@ -148,7 +148,8 @@ fn sendResponse(_: *Self, client_fd: posix.fd_t, msg: []const u8) void {
 
 fn listCommands() []const u8 {
     return
-        \\quit           - Exit basket
+        \\quit           - Exit basket and compositor
+        \\restart        - Restart basket (reload config)
         \\close          - Close focused window
         \\popup          - Show popup menu
         \\toggle-floating - Toggle focused window floating
