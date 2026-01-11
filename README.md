@@ -1,48 +1,117 @@
-# kwm - kewuaa's Window Manager
+# Basket
 
-A window manager based on River Wayland Compositor, written in Zig
+A doom-style window manager for River. Opinionated defaults, layered configuration, chord-based menus.
 
-![tile](./images/tile.png)
+Built by an AI (Claude) with human guidance. [See CONTRIBUTING.md for the full story.](./CONTRIBUTING.md)
 
-![monocle](./images/monocle.png)
+## Philosophy
 
-![scroller](./images/scroller.png)
+**Doom Emacs for window management.** Sane defaults that work out of the box. Friendly to newcomers who just want tiling. Unrestricted for ricers who want total control.
 
-## Requirements
-
-- Zig 0.15
-- River Wayland compositor 0.4.x (with river-window-management-v1 protocol)
+- **Defaults** - Works immediately, no config required
+- **Delta** - Which-key style popup for discoverability
+- **Overrides** - Unbind anything, rebind everything
 
 ## Features
 
-**Multiple layout:** tile, monocle, scroller, floating
+- **Layouts**: tile, monocle, scroller, floating
+- **Tags**: Real tags (not workspaces) with per-tag layouts
+- **Modes**: lock, default, floating, passthrough (vim-style modal bindings)
+- **Delta popup**: Chord tree navigation with live hints
+- **HiDPI**: Compositor-level scaling via wlr-output-management
+- **IPC**: Unix socket control for scripting (`basketholder`)
+- **Swallow**: Terminal windows swallow spawned GUI apps
 
-**Tag:** base tags not workspaces (supports separate window layouts for each tag)
+## Requirements
 
-**Rule support:** regex rule match
+- Zig 0.13+
+- River 0.4.x (with river-window-management-v1)
+- fcft (font rendering)
+- pixman
 
-**Bindings:** bindings in different mode such as default, passthrough orelse your custom mode
+## Quick Start
 
-**Rich window state:** swallow, maximize, fullscreen, fakefullscreen
+```bash
+# Build
+zig build
 
-## build
+# Run (inside River session)
+basket
 
-```zig
-zig build -Dconfig=/path/to/specify/config -Doptimize=ReleaseSafe
+# Or with River autostart
+# ~/.config/river/init:
+basket &
 ```
 
-It will try to find `config.zig` as config file. If not found, will use `config.def.zig` as backup.
+Press `Super` to open the delta popup. Press keys shown to navigate or execute.
 
-You can use `-Dconfig` to specify custom config file path, `-Doptimize` to specify build mode.
+## Configuration
 
-## configuration
+```
+~/.config/basket/
+├── theme.zon      # Borders, gaps, colors, scale
+├── config.zon     # Popup font, theme preset, position
+├── basket.zon     # Keybinding overrides
+├── delta.zon      # Chord tree root
+└── +window.zon    # Module injection (merges at 'w' key)
+```
 
-`cp config.def.zig config.zig` to create your own config file, and make custom modifications in `config.zig`.
+See [docs/](./docs/) for detailed configuration guide (WIP).
 
-## Thanks to these reference project
+### Example theme.zon
 
-- https://github.com/riverwm/river - River Wayland compositor
-- https://github.com/pinpox/river-pwm - River based window manager
-- https://codeberg.org/machi/machi - River based window manager
-- https://codeberg.org/dwl/dwl - dwm for wayland
-- https://codeberg.org/dwl/dwl-patches/src/branch/main/patches/swallow/swallow.patch - swallow window patch for dwl
+```zig
+.{
+    .border_width = 3,
+    .border_color_focus = 0xffc777ff,
+    .border_color_unfocus = 0x828bb8ff,
+    .tile_inner_gap = 8,
+    .tile_outer_gap = 6,
+    .scale = 2.0,  // HiDPI
+}
+```
+
+### Example basket.zon (keybind overrides)
+
+```zig
+.{
+    .disable_defaults = false,
+    .unbinds = .{
+        .{ .key = "q", .modifiers = .{ .super = true } },  // remove Super+Q
+    },
+    .binds = .{
+        .{ .key = "Return", .modifiers = .{ .super = true }, .action = "spawn alacritty" },
+    },
+}
+```
+
+## IPC
+
+Control basket from scripts via `basketholder`:
+
+```bash
+# Using socat
+echo "focus next" | socat - UNIX-CONNECT:$XDG_RUNTIME_DIR/basket.sock
+echo "layout monocle" | socat - UNIX-CONNECT:$XDG_RUNTIME_DIR/basket.sock
+echo "list" | socat - UNIX-CONNECT:$XDG_RUNTIME_DIR/basket.sock
+```
+
+Commands: `quit`, `restart`, `close`, `popup`, `hide-popup`, `focus`, `swap`, `layout`, `tag`, `mode`, `spawn`, and more. Run `list` for full reference.
+
+## Documentation
+
+- [ROADMAP.md](./ROADMAP.md) - Project status and planned features
+- [CONTRIBUTING.md](./CONTRIBUTING.md) - How this was built, how to contribute
+- [docs/dev/ARCHITECTURE.md](./docs/dev/ARCHITECTURE.md) - Code structure for developers
+
+## Credits
+
+- **River** - The Wayland compositor we build on
+- **kwm** - The window management core we forked from
+- **Doom Emacs** - The UX philosophy we borrowed
+- **Claude** - The AI that wrote most of this code
+- **Ben** - The human who made it happen
+
+## License
+
+MIT
