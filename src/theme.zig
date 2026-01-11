@@ -72,16 +72,20 @@ pub fn load(allocator: std.mem.Allocator, config_dir: []const u8) !void {
 
 fn parseTheme(content: []const u8) !void {
     // Simple manual parsing since Zig's @import for zon is compile-time only
-    // Look for key = value patterns
+    // Look for .key = value, patterns
 
     var lines = std.mem.splitScalar(u8, content, '\n');
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r");
-        if (trimmed.len == 0 or trimmed[0] == '/' or trimmed[0] == '.') continue;
+        if (trimmed.len == 0) continue;
+        if (trimmed[0] == '/') continue; // skip comments
+        if (trimmed[0] == '.' and trimmed.len > 1 and trimmed[1] == '{') continue; // skip .{
 
         // Parse .key = value,
         if (std.mem.startsWith(u8, trimmed, ".")) {
-            if (parseLine(trimmed[1..])) |_| {} else |_| {}
+            parseLine(trimmed[1..]) catch |err| {
+                log.warn("failed to parse line: {s} - {}", .{ trimmed, err });
+            };
         }
     }
 }
