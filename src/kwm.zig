@@ -1,4 +1,4 @@
-const types = @import("kwm/types.zig");
+pub const types = @import("kwm/types.zig");
 
 pub const Context = @import("kwm/context.zig");
 pub const Seat = @import("kwm/seat.zig");

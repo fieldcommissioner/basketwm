@@ -1,0 +1,32 @@
+#!/bin/sh
+# basketctl - IPC client for basket window manager
+#
+# Usage: basketctl <command> [args...]
+#
+# Examples:
+#   basketctl close
+#   basketctl focus next
+#   basketctl spawn firefox
+#   basketctl layout tile
+#   basketctl list
+
+SOCKET="${XDG_RUNTIME_DIR:-/tmp}/basket.sock"
+
+if [ ! -S "$SOCKET" ]; then
+    echo "error: basket is not running (no socket at $SOCKET)" >&2
+    exit 1
+fi
+
+if [ $# -eq 0 ]; then
+    echo "usage: basketctl <command> [args...]" >&2
+    echo "       basketctl list  - show available commands" >&2
+    exit 1
+fi
+
+# Send command and get response
+echo "$*" | nc -U -q0 "$SOCKET" 2>/dev/null || \
+echo "$*" | socat - UNIX-CONNECT:"$SOCKET" 2>/dev/null || \
+{
+    echo "error: failed to connect to basket (need nc or socat)" >&2
+    exit 1
+}

@@ -106,6 +106,15 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    const ipc_mod = b.createModule(.{
+        .root_source_file = b.path("src/ipc.zig"),
+        .imports = &.{
+            .{ .name = "utils", .module = utils_mod },
+            .{ .name = "kwm", .module = kwm_mod },
+            .{ .name = "config", .module = config_mod },
+        },
+    });
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -143,6 +152,7 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "utils", .module = utils_mod },
                 .{ .name = "kwm", .module = kwm_mod },
                 .{ .name = "theme", .module = theme_mod },
+                .{ .name = "ipc", .module = ipc_mod },
             },
 
             .link_libc = true,

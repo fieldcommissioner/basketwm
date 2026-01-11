@@ -12,6 +12,7 @@ const utils = @import("utils");
 const kwm = @import("kwm");
 const popup_mod = @import("popup.zig");
 const theme = @import("theme");
+const ipc = @import("ipc");
 
 const Globals = struct {
     wl_compositor: ?*wl.Compositor = null,
@@ -102,6 +103,38 @@ pub fn main() !void {
     defer kwm.Context.deinit();
     defer if (popup_mod.Popup.get()) |popup| popup.deinit();
 
+    // Initialize IPC server
+    var ipc_server = ipc.Server.init(utils.allocator) catch |err| {
+        std.debug.print("[ipc] server init failed: {}, continuing without IPC\n", .{err});
+        return runWithoutIpc(display);
+    };
+    defer ipc_server.deinit();
+
+    const wayland_fd = display.getFd();
+    const ipc_fd = ipc_server.getFd();
+    var poll_fds = [_]posix.pollfd {
+        .{ .fd = wayland_fd, .events = posix.POLL.IN, .revents = 0 },
+        .{ .fd = ipc_fd, .events = posix.POLL.IN, .revents = 0 },
+    };
+
+    const context = kwm.Context.get();
+    while (context.running) {
+        _ = display.flush();
+        _ = try posix.poll(&poll_fds, -1);
+
+        if (poll_fds[0].revents & posix.POLL.IN != 0) {
+            if (display.dispatch() != .SUCCESS) {
+                return error.DispatchFailed;
+            }
+        }
+
+        if (poll_fds[1].revents & posix.POLL.IN != 0) {
+            ipc_server.handleEvent();
+        }
+    }
+}
+
+fn runWithoutIpc(display: *wl.Display) !void {
     const wayland_fd = display.getFd();
     var poll_fds = [_]posix.pollfd {
         .{ .fd = wayland_fd, .events = posix.POLL.IN, .revents = 0 },
