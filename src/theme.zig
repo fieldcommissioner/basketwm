@@ -95,8 +95,14 @@ fn parseLine(line: []const u8) !void {
     const eq_pos = std.mem.indexOf(u8, line, "=") orelse return;
     const key = std.mem.trim(u8, line[0..eq_pos], " \t");
 
-    // Get value (strip trailing comma and whitespace)
+    // Get value (strip trailing comma, whitespace, and comments)
     var value = std.mem.trim(u8, line[eq_pos + 1 ..], " \t");
+
+    // Strip inline comments (// ...)
+    if (std.mem.indexOf(u8, value, "//")) |comment_pos| {
+        value = std.mem.trim(u8, value[0..comment_pos], " \t");
+    }
+
     if (value.len > 0 and value[value.len - 1] == ',') {
         value = value[0 .. value.len - 1];
     }
@@ -129,6 +135,7 @@ fn parseLine(line: []const u8) !void {
         global_theme.scroller_mfact = try std.fmt.parseFloat(f32, value);
     } else if (std.mem.eql(u8, key, "scale")) {
         global_theme.scale = try std.fmt.parseFloat(f32, value);
+        std.debug.print("[theme] PARSED scale={d:.2}\n", .{global_theme.scale});
     }
 }
 
@@ -185,6 +192,9 @@ pub fn apply() void {
         t.border_color_focus,
         t.border_color_unfocus,
     });
+
+    // Debug: print to stderr so we can see it
+    std.debug.print("[theme] APPLIED: scale={d:.2}, border_width={}\n", .{ scale, config.border_width });
 }
 
 /// Apply UI scale environment variables
