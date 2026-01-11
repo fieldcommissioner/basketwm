@@ -24,7 +24,7 @@ Built by an AI (Claude) with human guidance. [See CONTRIBUTING.md for the full s
 
 ## Requirements
 
-- Zig 0.13+
+- Zig 0.15+
 - River 0.4.x (with river-window-management-v1)
 - fcft (font rendering)
 - pixman
