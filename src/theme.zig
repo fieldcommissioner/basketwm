@@ -151,28 +151,37 @@ pub fn apply() void {
     const config = @import("config");
     const t = get();
 
-    // Apply border settings
-    config.border_width = t.border_width;
+    // Helper to scale pixel values
+    const scale = t.scale;
+    const scaleInt = struct {
+        fn f(val: i32, s: f32) i32 {
+            return @intFromFloat(@as(f32, @floatFromInt(val)) * s);
+        }
+    }.f;
+
+    // Apply border settings (scaled for HiDPI)
+    config.border_width = scaleInt(t.border_width, scale);
     // Note: border_color is a var struct, assign via pointer
     const bc_ptr: *@TypeOf(config.border_color) = &config.border_color;
     bc_ptr.focus = t.border_color_focus;
     bc_ptr.unfocus = t.border_color_unfocus;
     bc_ptr.urgent = t.border_color_urgent;
 
-    // Apply layout settings
-    config.layout.tile.inner_gap = t.tile_inner_gap;
-    config.layout.tile.outer_gap = t.tile_outer_gap;
+    // Apply layout settings (scaled for HiDPI)
+    config.layout.tile.inner_gap = scaleInt(t.tile_inner_gap, scale);
+    config.layout.tile.outer_gap = scaleInt(t.tile_outer_gap, scale);
     config.layout.tile.mfact = t.tile_mfact;
     config.layout.tile.nmaster = t.tile_nmaster;
-    config.layout.monocle.gap = t.monocle_gap;
-    config.layout.scroller.inner_gap = t.scroller_inner_gap;
-    config.layout.scroller.outer_gap = t.scroller_outer_gap;
+    config.layout.monocle.gap = scaleInt(t.monocle_gap, scale);
+    config.layout.scroller.inner_gap = scaleInt(t.scroller_inner_gap, scale);
+    config.layout.scroller.outer_gap = scaleInt(t.scroller_outer_gap, scale);
     config.layout.scroller.mfact = t.scroller_mfact;
 
-    log.info("theme applied: border={}, gaps={}/{}, colors=0x{x}/0x{x}", .{
-        t.border_width,
-        t.tile_inner_gap,
-        t.tile_outer_gap,
+    log.info("theme applied: border={} (scale={}), gaps={}/{}, colors=0x{x}/0x{x}", .{
+        config.border_width,
+        scale,
+        config.layout.tile.inner_gap,
+        config.layout.tile.outer_gap,
         t.border_color_focus,
         t.border_color_unfocus,
     });
