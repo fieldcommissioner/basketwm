@@ -189,21 +189,27 @@ pub const Parser = struct {
 
     fn parseTheme(self: *Parser) Error!Theme {
         if (self.peek() == '.') {
-            // Named preset
             self.pos += 1;
-            const name = try self.parseIdentifier();
-            if (std.mem.eql(u8, name, "gruvbox")) return presets.gruvbox;
-            if (std.mem.eql(u8, name, "catppuccin")) return presets.catppuccin;
-            if (std.mem.eql(u8, name, "nord")) return presets.nord;
-            if (std.mem.eql(u8, name, "dracula")) return presets.dracula;
-            if (std.mem.eql(u8, name, "tokyo_night")) return presets.tokyo_night;
+            // Check if inline theme (.{) or named preset (.name)
+            if (self.peek() == '{') {
+                // Inline theme - fall through to parsing below
+                self.pos += 1;
+            } else {
+                // Named preset
+                const name = try self.parseIdentifier();
+                if (std.mem.eql(u8, name, "gruvbox")) return presets.gruvbox;
+                if (std.mem.eql(u8, name, "catppuccin")) return presets.catppuccin;
+                if (std.mem.eql(u8, name, "nord")) return presets.nord;
+                if (std.mem.eql(u8, name, "dracula")) return presets.dracula;
+                if (std.mem.eql(u8, name, "tokyo_night")) return presets.tokyo_night;
+                return presets.default;
+            }
+        } else {
             return presets.default;
         }
 
         // Inline theme
         var theme = Theme{};
-        try self.expect('.');
-        try self.expect('{');
 
         while (true) {
             self.skipWhitespaceAndComments();
