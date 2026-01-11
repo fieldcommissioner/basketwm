@@ -14,6 +14,7 @@ const zwlr = wayland.client.zwlr;
 const render = @import("../render/mod.zig");
 const tree = @import("../tree/navigation.zig");
 const theme_mod = @import("theme");
+const settings = @import("../config/settings.zig");
 
 pub const LayerSurface = struct {
     compositor: *wl.Compositor,
@@ -32,13 +33,15 @@ pub const LayerSurface = struct {
     height: u32 = 300,
     scale: f32 = 1.0,
 
+    // Position
+    position: settings.Position = .bottom_right,
+
     // State
     configured: bool = false,
     closed: bool = false,
 
     pub fn init(compositor: *wl.Compositor, layer_shell: *zwlr.LayerShellV1, shm: *wl.Shm) LayerSurface {
-        // Get scale from theme
-        const scale = theme_mod.get().scale;
+        // Use logical coordinates - compositor handles HiDPI scaling via wlr-output-management
         const base_width: u32 = 400;
         const base_height: u32 = 300;
 
@@ -46,10 +49,10 @@ pub const LayerSurface = struct {
             .compositor = compositor,
             .layer_shell = layer_shell,
             .shm = shm,
-            .menu_renderer = render.MenuRenderer.initScaled(.{}, scale),
-            .width = @intFromFloat(@as(f32, @floatFromInt(base_width)) * scale),
-            .height = @intFromFloat(@as(f32, @floatFromInt(base_height)) * scale),
-            .scale = scale,
+            .menu_renderer = render.MenuRenderer.init(.{}),
+            .width = base_width,
+            .height = base_height,
+            .scale = 1.0, // Compositor handles scaling
         };
     }
 
@@ -62,12 +65,21 @@ pub const LayerSurface = struct {
         };
     }
 
-    pub fn initWithFont(compositor: *wl.Compositor, layer_shell: *zwlr.LayerShellV1, shm: *wl.Shm, theme: render.Theme, font_family: []const u8, font_size: u32) LayerSurface {
+    pub fn initWithFont(
+        compositor: *wl.Compositor,
+        layer_shell: *zwlr.LayerShellV1,
+        shm: *wl.Shm,
+        theme: render.Theme,
+        font_family: []const u8,
+        font_size: u32,
+        pos: settings.Position,
+    ) LayerSurface {
         return .{
             .compositor = compositor,
             .layer_shell = layer_shell,
             .shm = shm,
             .menu_renderer = render.MenuRenderer.initWithFont(theme, font_family, font_size),
+            .position = pos,
         };
     }
 
@@ -92,12 +104,18 @@ pub const LayerSurface = struct {
         // Set size (0 means use anchor-based sizing)
         ls.setSize(self.width, self.height);
 
-        // Anchor to bottom-right corner
-        ls.setAnchor(.{ .bottom = true, .right = true });
+        // Anchor based on position setting
+        const anchor = positionToAnchor(self.position);
+        ls.setAnchor(anchor);
 
-        // Add margin from edge (scaled)
-        const margin: i32 = @intFromFloat(20.0 * self.scale);
-        ls.setMargin(0, margin, margin, 0); // top, right, bottom, left
+        // Add margin from edge based on position
+        const margin: i32 = 20;
+        ls.setMargin(
+            if (anchor.top) margin else 0,
+            if (anchor.right) margin else 0,
+            if (anchor.bottom) margin else 0,
+            if (anchor.left) margin else 0,
+        );
 
         // Set up listener for configure events
         ls.setListener(*LayerSurface, layerSurfaceListener, self);
@@ -172,13 +190,9 @@ pub const LayerSurface = struct {
         if (self.surface) |s| {
             if (self.buffer.?.getBuffer()) |buf| {
                 s.attach(buf, 0, 0);
-                // Tell compositor our buffer is rendered at scale
-                if (self.scale > 1.0) {
-                    s.setBufferScale(@intFromFloat(self.scale));
-                }
                 s.damageBuffer(0, 0, @intCast(self.width), @intCast(self.height));
                 s.commit();
-                std.debug.print("[layer] buffer attached and committed (scale={})\n", .{self.scale});
+                std.debug.print("[layer] buffer attached and committed\n", .{});
             }
         }
     }
@@ -206,9 +220,6 @@ pub const LayerSurface = struct {
             if (self.surface) |s| {
                 if (buf.getBuffer()) |wl_buf| {
                     s.attach(wl_buf, 0, 0);
-                    if (self.scale > 1.0) {
-                        s.setBufferScale(@intFromFloat(self.scale));
-                    }
                     s.damageBuffer(0, 0, @intCast(self.width), @intCast(self.height));
                     s.commit();
                 }
@@ -220,3 +231,16 @@ pub const LayerSurface = struct {
         return self.configured and !self.closed;
     }
 };
+
+/// Convert Position enum to layer-shell anchor flags
+fn positionToAnchor(pos: settings.Position) zwlr.LayerSurfaceV1.Anchor {
+    return switch (pos) {
+        .top_left => .{ .top = true, .left = true },
+        .top_center => .{ .top = true },
+        .top_right => .{ .top = true, .right = true },
+        .center => .{}, // no anchors = centered
+        .bottom_left => .{ .bottom = true, .left = true },
+        .bottom_center => .{ .bottom = true },
+        .bottom_right => .{ .bottom = true, .right = true },
+    };
+}

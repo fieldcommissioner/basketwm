@@ -36,6 +36,7 @@ pub fn parse(allocator: mem.Allocator, input: []const u8) ParseError!binding.Act
     if (mem.eql(u8, cmd, "restart")) return .restart;
     if (mem.eql(u8, cmd, "close")) return .close;
     if (mem.eql(u8, cmd, "popup")) return .show_popup;
+    if (mem.eql(u8, cmd, "hide-popup")) return .hide_popup;
     if (mem.eql(u8, cmd, "toggle-floating")) return .toggle_floating;
     if (mem.eql(u8, cmd, "toggle-swallow")) return .toggle_swallow;
     if (mem.eql(u8, cmd, "zoom")) return .zoom;

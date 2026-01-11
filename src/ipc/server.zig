@@ -152,6 +152,7 @@ fn listCommands() []const u8 {
         \\restart        - Restart basket (reload config)
         \\close          - Close focused window
         \\popup          - Show popup menu
+        \\hide-popup     - Hide popup menu
         \\toggle-floating - Toggle focused window floating
         \\toggle-swallow - Toggle focused window swallow
         \\zoom           - Move focused window to head
@@ -162,7 +163,7 @@ fn listCommands() []const u8 {
         \\send-to-output <next|prev> - Send window to output
         \\swap <next|prev> - Swap window position
         \\layout <tile|monocle|scroller|float> - Switch layout
-        \\mode <name>    - Switch to mode
+        \\mode <name>    - Switch to mode (lock/default/floating/passthrough)
         \\tag <n>        - Switch output to tag n
         \\window-tag <n> - Set window tag to n
         \\tag-toggle <n> - Toggle output tag n

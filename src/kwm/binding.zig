@@ -27,6 +27,7 @@ pub const Action = union(enum) {
     restart,
     close,
     show_popup,
+    hide_popup,
     spawn: struct {
         argv: []const []const u8,
     },

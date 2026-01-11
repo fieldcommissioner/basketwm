@@ -80,10 +80,12 @@ pub const MenuRenderer = struct {
             // Update theme metrics based on actual font
             renderer.theme.line_height = fnt.height() + 4;
             renderer.theme.key_width = fnt.measureString("w >") + 8;
-        } else |_| {
+            std.debug.print("[menu] fcft font loaded: {s} size={} height={}\n", .{ font_family, font_size, fnt.height() });
+        } else |err| {
             // Fall back to bitmap font
             renderer.theme.line_height = bitmap_font.GLYPH_HEIGHT + 4;
             renderer.theme.key_width = bitmap_font.GLYPH_WIDTH * 4;
+            std.debug.print("[menu] fcft font failed: {s} size={} err={}, using bitmap fallback\n", .{ font_family, font_size, err });
         }
 
         return renderer;

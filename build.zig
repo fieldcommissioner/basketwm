@@ -35,6 +35,7 @@ pub fn build(b: *std.Build) void {
     scanner.addCustomProtocol(b.path("protocol/river-input-management-v1.xml"));
     scanner.addCustomProtocol(b.path("protocol/river-libinput-config-v1.xml"));
     scanner.addCustomProtocol(b.path("protocol/wlr-layer-shell-unstable-v1.xml"));
+    scanner.addCustomProtocol(b.path("protocol/wlr-output-management-unstable-v1.xml"));
 
     scanner.generate("wl_compositor", 4);
     scanner.generate("wl_shm", 2);
@@ -48,6 +49,7 @@ pub fn build(b: *std.Build) void {
     scanner.generate("river_layer_shell_v1", 1);
     scanner.generate("river_input_manager_v1", 1);
     scanner.generate("river_libinput_config_v1", 1);
+    scanner.generate("zwlr_output_manager_v1", 4);
 
     const wayland_mod = b.createModule(.{ .root_source_file = scanner.result });
     const xkbcommon_mod = b.dependency("xkbcommon", .{}).module("xkbcommon");
@@ -134,6 +136,14 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    const output_config_mod = b.createModule(.{
+        .root_source_file = b.path("src/output_config.zig"),
+        .imports = &.{
+            .{ .name = "wayland", .module = wayland_mod },
+            .{ .name = "theme", .module = theme_mod },
+        },
+    });
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -174,6 +184,7 @@ pub fn build(b: *std.Build) void {
                 .{ .name = "ipc", .module = ipc_mod },
                 .{ .name = "defaults", .module = defaults_mod },
                 .{ .name = "basket_config", .module = basket_config_mod },
+                .{ .name = "output_config", .module = output_config_mod },
             },
 
             .link_libc = true,

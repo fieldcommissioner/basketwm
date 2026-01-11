@@ -16,6 +16,7 @@ const render = @import("render/mod.zig");
 const surface_mod = @import("surface/layer.zig");
 const tree = @import("tree/navigation.zig");
 pub const zon_config = @import("config/loader.zig");
+const settings_mod = @import("config/settings.zig");
 
 // Global popup instance
 var global_popup: ?*Popup = null;
@@ -35,6 +36,7 @@ pub const Popup = struct {
     navigator: ?tree.Navigator = null,
     menu_root: ?*const tree.Node = null,
     config: ?zon_config.Config = null,
+    settings: ?settings_mod.Settings = null,
 
     // Visibility
     visible: bool = false,
@@ -69,7 +71,15 @@ pub const Popup = struct {
     }
 
     pub fn loadConfig(self: *Popup, config_dir: []const u8) void {
-        // Load .zon config
+        // Load settings from config.zon (theme, font, etc)
+        if (zon_config.loadSettings(self.allocator, config_dir)) |s| {
+            self.settings = s;
+            log.info("loaded settings: font={s} size={}", .{ s.font.family, s.font.size });
+        } else |err| {
+            log.warn("failed to load settings: {}, using defaults", .{err});
+        }
+
+        // Load .zon config (delta tree)
         if (zon_config.load(self.allocator, config_dir)) |cfg| {
             self.config = cfg;
             if (cfg.root) |root| {
@@ -90,11 +100,27 @@ pub const Popup = struct {
 
         // Create layer surface on first show
         if (self.layer_surface == null) {
-            self.layer_surface = surface_mod.LayerSurface.init(
-                self.compositor,
-                self.layer_shell,
-                self.shm,
-            );
+            if (self.settings) |s| {
+                // Use loaded settings for theme, font, and position
+                log.info("creating layer surface with font: {s} size={} pos={s}", .{ s.font.family, s.font.size, @tagName(s.position) });
+                const theme = render.Theme.fromSettings(s.theme);
+                self.layer_surface = surface_mod.LayerSurface.initWithFont(
+                    self.compositor,
+                    self.layer_shell,
+                    self.shm,
+                    theme,
+                    s.font.family,
+                    s.font.size,
+                    s.position,
+                );
+            } else {
+                log.info("creating layer surface with defaults (no settings)", .{});
+                self.layer_surface = surface_mod.LayerSurface.init(
+                    self.compositor,
+                    self.layer_shell,
+                    self.shm,
+                );
+            }
             try self.layer_surface.?.create();
         }
 
@@ -232,6 +258,9 @@ pub const Popup = struct {
         }
         if (self.config) |*cfg| {
             cfg.deinit();
+        }
+        if (self.settings) |*s| {
+            s.deinit();
         }
 
         global_popup = null;

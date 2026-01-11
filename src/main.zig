@@ -15,6 +15,8 @@ const theme = @import("theme");
 const ipc = @import("ipc");
 const defaults = @import("defaults");
 const basket_config = @import("basket_config");
+const output_config = @import("output_config");
+const render = @import("render/mod.zig");
 
 const Globals = struct {
     wl_compositor: ?*wl.Compositor = null,
@@ -43,6 +45,10 @@ pub fn main() !void {
         std.debug.print("[theme] load failed: {}, using defaults\n", .{err});
     };
     theme.apply();
+
+    // Initialize fcft font library
+    render.initFcft();
+    defer render.deinitFcft();
 
     // Load runtime keybindings (defaults + basket.zon overrides)
     loadRuntimeBindings(utils.allocator, config_dir);
@@ -103,8 +109,9 @@ pub fn main() !void {
                 // Load popup menu config (reuse theme config_dir)
                 popup.loadConfig(config_dir);
 
-                // Register popup callback with kwm
+                // Register popup callbacks with kwm
                 kwm.Seat.show_popup_callback = &showPopupWrapper;
+                kwm.Seat.hide_popup_callback = &hidePopupWrapper;
             }
         }
     }
@@ -170,6 +177,12 @@ fn showPopupWrapper() void {
     }
 }
 
+fn hidePopupWrapper() void {
+    if (popup_mod.Popup.get()) |popup| {
+        popup.hide();
+    }
+}
+
 fn registry_listener(registry: *wl.Registry, event: wl.Registry.Event, globals: *Globals) void {
     switch (event) {
         .global => |global| {
@@ -195,6 +208,8 @@ fn registry_listener(registry: *wl.Registry, event: wl.Registry.Event, globals: 
                 globals.rwm_input_manager = registry.bind(global.name, river.InputManagerV1, 1) catch return;
             } else if (mem.orderZ(u8, global.interface, river.LibinputConfigV1.interface.name) == .eq) {
                 globals.rwm_libinput_config = registry.bind(global.name, river.LibinputConfigV1, 1) catch return;
+            } else if (mem.orderZ(u8, global.interface, zwlr.OutputManagerV1.interface.name) == .eq) {
+                output_config.init(utils.allocator, registry, global.name);
             }
         },
         .global_remove => {},
