@@ -104,12 +104,39 @@ Basket is a doom-style window manager client for River compositor, built on kwm.
 
 ---
 
+## Documentation
+
+### Markdown (`docs/`) - User-friendly
+- [ ] `getting-started.md` - Installation, first config, basic usage
+- [ ] `configuration.md` - All config files explained
+- [ ] `keybindings.md` - Defaults table, customization guide
+- [ ] `ipc.md` - basketholder commands, scripting examples
+- [ ] `faq.md` - Common issues, migration tips
+
+### Man Pages (`man/`) - GNU man format
+- [ ] `basket.1` - Main executable
+- [ ] `basket.zon.5` - Config file formats
+- [ ] `basketholder.1` - IPC client
+- [ ] `basket-ipc.7` - Protocol reference
+
+### Developer (`docs/dev/`)
+- [ ] `ARCHITECTURE.md` - Module overview, data flow
+- [ ] `PROTOCOLS.md` - River/Wayland protocol notes
+- [ ] Code comments (ongoing)
+
+### Examples (`examples/`)
+- [ ] Minimal config
+- [ ] Gruvbox rice
+- [ ] Vim-style modal config
+- [ ] Hyprland refugee config (keybind translation)
+
+---
+
 ## Technical Debt
 
 - [ ] Popup surface caching (currently recreated each show)
 - [ ] Config error reporting to user (currently silent/logged)
 - [ ] Test coverage for config parsers
-- [ ] Documentation for config format
 
 ---
 
